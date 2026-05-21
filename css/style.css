@@ -6,7 +6,7 @@
 }
 
 body {
-    background-color: #1a1a2e;
+    background: linear-gradient(135deg, #0c0c1d 0%, #1a1a3e 50%, #0c0c1d 100%);
     color: #ffffff;
     font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
     min-height: 100vh;
@@ -21,44 +21,101 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 20px;
+    padding: 20px;
 }
 
 /* 游戏标题 */
 .game-title {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: bold;
     color: #00d4ff;
-    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-    letter-spacing: 4px;
+    text-shadow: 
+        0 0 10px rgba(0, 212, 255, 0.5),
+        0 0 20px rgba(0, 212, 255, 0.3),
+        0 0 30px rgba(0, 212, 255, 0.1);
+    letter-spacing: 6px;
+    animation: titleGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+    from {
+        text-shadow: 
+            0 0 10px rgba(0, 212, 255, 0.5),
+            0 0 20px rgba(0, 212, 255, 0.3);
+    }
+    to {
+        text-shadow: 
+            0 0 20px rgba(0, 212, 255, 0.8),
+            0 0 40px rgba(0, 212, 255, 0.5),
+            0 0 60px rgba(0, 212, 255, 0.3);
+    }
 }
 
 /* 游戏画布 */
 #gameCanvas {
     display: block;
-    background-color: #0f0f23;
-    border: 2px solid #00d4ff;
+    border: 3px solid #00d4ff;
+    border-radius: 8px;
+    box-shadow: 
+        0 0 20px rgba(0, 212, 255, 0.4),
+        0 0 40px rgba(0, 212, 255, 0.2),
+        inset 0 0 20px rgba(0, 212, 255, 0.1);
+    cursor: crosshair;
+}
+
+/* 操作提示 */
+.game-controls {
+    display: flex;
+    gap: 24px;
+    font-size: 14px;
+    color: #8899aa;
+    margin-top: 8px;
+}
+
+.control-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.key {
+    background: rgba(0, 212, 255, 0.15);
+    border: 1px solid rgba(0, 212, 255, 0.3);
     border-radius: 4px;
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+    padding: 2px 8px;
+    font-size: 12px;
+    color: #00d4ff;
 }
 
 /* 响应式适配 - 移动设备 */
 @media (max-width: 520px) {
     .game-title {
-        font-size: 22px;
+        font-size: 24px;
+        letter-spacing: 4px;
     }
 
     #gameCanvas {
         max-width: 95vw;
-        max-height: 70vh;
+        max-height: 65vh;
         width: auto;
         height: auto;
+    }
+
+    .game-controls {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
     }
 }
 
 /* 响应式适配 - 超小屏幕 */
 @media (max-width: 360px) {
     .game-title {
-        font-size: 18px;
+        font-size: 20px;
+    }
+
+    .game-controls {
+        font-size: 12px;
     }
 }

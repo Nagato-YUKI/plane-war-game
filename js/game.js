@@ -16,16 +16,56 @@ const PLAYER_HEIGHT = 60;
 const PLAYER_SPEED = 5;
 
 // 子弹参数
-const BULLET_WIDTH = 4;
-const BULLET_HEIGHT = 12;
+const BULLET_WIDTH = 8;
+const BULLET_HEIGHT = 20;
 const BULLET_SPEED = 8;
 const BULLET_INTERVAL = 200; // 子弹发射间隔（毫秒）
 
 // 敌机参数
-const ENEMY_WIDTH = 40;
-const ENEMY_HEIGHT = 40;
+const ENEMY_WIDTH = 45;
+const ENEMY_HEIGHT = 45;
 const ENEMY_SPEED_BASE = 2;
 const ENEMY_SPAWN_INTERVAL = 1000; // 敌机生成间隔（毫秒）
+
+// 图片资源
+const images = {
+    player: new Image(),
+    enemy: new Image(),
+    background: new Image(),
+    bullet: new Image()
+};
+
+// 图片加载状态
+let imagesLoaded = 0;
+const TOTAL_IMAGES = 4;
+
+/**
+ * 加载图片资源
+ */
+function loadImages() {
+    images.player.src = 'images/player.png';
+    images.enemy.src = 'images/enemy.png';
+    images.background.src = 'images/background.png';
+    images.bullet.src = 'images/bullet.png';
+
+    const onLoad = () => {
+        imagesLoaded++;
+        if (imagesLoaded === TOTAL_IMAGES) {
+            init();
+        }
+    };
+
+    images.player.onload = onLoad;
+    images.enemy.onload = onLoad;
+    images.background.onload = onLoad;
+    images.bullet.onload = onLoad;
+
+    // 图片加载失败时也继续（降级到绘制模式）
+    images.player.onerror = onLoad;
+    images.enemy.onerror = onLoad;
+    images.background.onerror = onLoad;
+    images.bullet.onerror = onLoad;
+}
 
 // 游戏状态枚举
 const GAME_STATE = {
@@ -56,6 +96,7 @@ const keys = {};
 let mouseControl = false;
 let mouseX = 0;
 let mouseY = 0;
+let isMouseDown = false;
 
 // 子弹数组
 let playerBullets = [];
@@ -97,7 +138,9 @@ function init() {
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 
     // 绑定鼠标事件
+    canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
     canvas.addEventListener('mouseleave', handleMouseLeave);
 
     // 开始游戏循环
@@ -131,8 +174,7 @@ function gameLoop() {
  * 绘制开始界面
  */
 function drawStartScreen() {
-    ctx.fillStyle = '#0f0f23';
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    drawBackground();
 
     ctx.fillStyle = '#00d4ff';
     ctx.font = 'bold 36px Microsoft YaHei';
@@ -273,8 +315,14 @@ function drawGame() {
  * 绘制游戏背景
  */
 function drawBackground() {
-    ctx.fillStyle = '#0f0f23';
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    if (imagesLoaded === TOTAL_IMAGES && images.background.complete) {
+        // 使用图片背景，绘制两次实现无缝滚动效果
+        ctx.drawImage(images.background, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    } else {
+        // 降级到纯色背景
+        ctx.fillStyle = '#0f0f23';
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    }
 }
 
 /**
@@ -311,24 +359,20 @@ function clampPlayerPosition() {
  * 绘制玩家飞机
  */
 function drawPlayer() {
-    const cx = player.x + player.width / 2;
-    const cy = player.y + player.height / 2;
-    ctx.fillStyle = '#00d4ff';
-    ctx.beginPath();
-    // 三角形机身
-    ctx.moveTo(cx, player.y);
-    ctx.lineTo(player.x, player.y + player.height);
-    ctx.lineTo(player.x + player.width, player.y + player.height);
-    ctx.closePath();
-    ctx.fill();
-    // 机翼
-    ctx.fillStyle = '#00aaff';
-    ctx.beginPath();
-    ctx.moveTo(cx, player.y + player.height * 0.3);
-    ctx.lineTo(player.x - player.width * 0.3, player.y + player.height * 0.7);
-    ctx.lineTo(player.x + player.width * 1.3, player.y + player.height * 0.7);
-    ctx.closePath();
-    ctx.fill();
+    if (imagesLoaded === TOTAL_IMAGES && images.player.complete) {
+        // 使用图片绘制玩家飞机
+        ctx.drawImage(images.player, player.x, player.y, player.width, player.height);
+    } else {
+        // 降级到几何图形绘制
+        const cx = player.x + player.width / 2;
+        ctx.fillStyle = '#00d4ff';
+        ctx.beginPath();
+        ctx.moveTo(cx, player.y);
+        ctx.lineTo(player.x, player.y + player.height);
+        ctx.lineTo(player.x + player.width, player.y + player.height);
+        ctx.closePath();
+        ctx.fill();
+    }
 }
 
 /**
@@ -395,9 +439,15 @@ function updateBullets() {
  * 绘制所有子弹
  */
 function drawBullets() {
-    ctx.fillStyle = '#ffdd00';
-    for (const bullet of playerBullets) {
-        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+    if (imagesLoaded === TOTAL_IMAGES && images.bullet.complete) {
+        for (const bullet of playerBullets) {
+            ctx.drawImage(images.bullet, bullet.x, bullet.y, bullet.width, bullet.height);
+        }
+    } else {
+        ctx.fillStyle = '#ffdd00';
+        for (const bullet of playerBullets) {
+            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        }
     }
 }
 
@@ -437,9 +487,10 @@ function handleTouchEnd(event) {
 }
 
 /**
- * 处理鼠标移动事件
+ * 处理鼠标按下事件
  */
-function handleMouseMove(event) {
+function handleMouseDown(event) {
+    isMouseDown = true;
     const rect = canvas.getBoundingClientRect();
     mouseX = event.clientX - rect.left;
     mouseY = event.clientY - rect.top;
@@ -447,9 +498,30 @@ function handleMouseMove(event) {
 }
 
 /**
+ * 处理鼠标移动事件
+ * 只有在鼠标按下时才控制飞机位置
+ */
+function handleMouseMove(event) {
+    if (!isMouseDown) return;
+    const rect = canvas.getBoundingClientRect();
+    mouseX = event.clientX - rect.left;
+    mouseY = event.clientY - rect.top;
+    mouseControl = true;
+}
+
+/**
+ * 处理鼠标释放事件
+ */
+function handleMouseUp() {
+    isMouseDown = false;
+    mouseControl = false;
+}
+
+/**
  * 处理鼠标离开画布事件
  */
 function handleMouseLeave() {
+    isMouseDown = false;
     mouseControl = false;
 }
 
@@ -579,18 +651,21 @@ function drawEnemies() {
 }
 
 /**
- * 绘制单个敌机（倒三角形）
+ * 绘制单个敌机
  */
 function drawEnemy(enemy) {
-    const cx = enemy.x + enemy.width / 2;
-    const cy = enemy.y + enemy.height / 2;
-    ctx.fillStyle = '#ff4444';
-    ctx.beginPath();
-    ctx.moveTo(enemy.x, enemy.y);
-    ctx.lineTo(enemy.x + enemy.width, enemy.y);
-    ctx.lineTo(cx, enemy.y + enemy.height);
-    ctx.closePath();
-    ctx.fill();
+    if (imagesLoaded === TOTAL_IMAGES && images.enemy.complete) {
+        ctx.drawImage(images.enemy, enemy.x, enemy.y, enemy.width, enemy.height);
+    } else {
+        const cx = enemy.x + enemy.width / 2;
+        ctx.fillStyle = '#ff4444';
+        ctx.beginPath();
+        ctx.moveTo(enemy.x, enemy.y);
+        ctx.lineTo(enemy.x + enemy.width, enemy.y);
+        ctx.lineTo(cx, enemy.y + enemy.height);
+        ctx.closePath();
+        ctx.fill();
+    }
 }
 
 /**
@@ -612,5 +687,5 @@ function resetEnemies() {
     lastEnemySpawnTime = 0;
 }
 
-// 页面加载完成后初始化游戏
-window.addEventListener('load', init);
+// 页面加载完成后加载图片资源
+window.addEventListener('load', loadImages);
