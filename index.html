@@ -3,30 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>飞机大战</title>
+    <title>飞机大战 - 雷电风格</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="game-container">
-        <h1 class="game-title">飞机大战</h1>
-        <div class="canvas-wrapper">
-            <canvas id="gameCanvas" width="480" height="640"></canvas>
-        </div>
-        <div class="game-controls">
-            <div class="control-item">
-                <span class="key">方向键</span>
-                <span>移动</span>
-            </div>
-            <div class="control-item">
-                <span class="key">鼠标拖动</span>
-                <span>移动+射击</span>
-            </div>
-            <div class="control-item">
-                <span class="key">空格</span>
-                <span>射击</span>
-            </div>
-        </div>
-    </div>
+    <canvas id="gameCanvas"></canvas>
+    <script src="js/config.js"></script>
+    <script src="js/assets.js"></script>
+    <script src="js/renderer.js"></script>
     <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
