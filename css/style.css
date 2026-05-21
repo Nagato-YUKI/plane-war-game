@@ -1,0 +1,64 @@
+/* 页面基础样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #1a1a2e;
+    color: #ffffff;
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* 游戏容器 */
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+/* 游戏标题 */
+.game-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #00d4ff;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+    letter-spacing: 4px;
+}
+
+/* 游戏画布 */
+#gameCanvas {
+    display: block;
+    background-color: #0f0f23;
+    border: 2px solid #00d4ff;
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+/* 响应式适配 - 移动设备 */
+@media (max-width: 520px) {
+    .game-title {
+        font-size: 22px;
+    }
+
+    #gameCanvas {
+        max-width: 95vw;
+        max-height: 70vh;
+        width: auto;
+        height: auto;
+    }
+}
+
+/* 响应式适配 - 超小屏幕 */
+@media (max-width: 360px) {
+    .game-title {
+        font-size: 18px;
+    }
+}
