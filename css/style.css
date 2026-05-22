@@ -1,27 +1,179 @@
-body {
+:root {
+    --bg-void: #05050f;
+    --bg-card: #0a0a1a;
+    --neon-cyan: #00ffff;
+    --neon-green: #00ff88;
+    --neon-magenta: #ff00ff;
+    --neon-orange: #ff8800;
+    --alert-red: #ff3366;
+    --border-dim: #1a2a3a;
+    --border-bright: #00aacc;
+    --font-heading: 'Orbitron', monospace;
+    --font-data: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+* {
     margin: 0;
     padding: 0;
-    background-color: #0a0a1a;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-void);
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    font-family: 'Courier New', monospace;
+    font-family: var(--font-data);
     overflow: hidden;
 }
 
+.game-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.game-frame {
+    position: relative;
+    padding: 3px;
+    background: linear-gradient(135deg, var(--neon-cyan) 0%, transparent 30%, transparent 70%, var(--neon-cyan) 100%);
+    clip-path: polygon(
+        12px 0%, calc(100% - 12px) 0%,
+        100% 12px, 100% calc(100% - 12px),
+        calc(100% - 12px) 100%, 12px 100%,
+        0% calc(100% - 12px), 0% 12px
+    );
+}
+
+.game-frame::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    background: var(--bg-void);
+    clip-path: polygon(
+        11px 0%, calc(100% - 11px) 0%,
+        100% 11px, 100% calc(100% - 11px),
+        calc(100% - 11px) 100%, 11px 100%,
+        0% calc(100% - 11px), 0% 11px
+    );
+    z-index: 0;
+}
+
 canvas {
-    border: 2px solid #00ffff;
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), 0 0 40px rgba(0, 255, 255, 0.1);
-    image-rendering: pixelated;
+    display: block;
+    position: relative;
+    z-index: 1;
+    cursor: crosshair;
+    image-rendering: auto;
     max-width: 100vw;
     max-height: 100vh;
-    cursor: crosshair;
+}
+
+.frame-corner {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.frame-corner-tl {
+    top: -2px; left: -2px;
+    border-top: 2px solid var(--neon-cyan);
+    border-left: 2px solid var(--neon-cyan);
+    filter: drop-shadow(0 0 4px var(--neon-cyan));
+}
+.frame-corner-tr {
+    top: -2px; right: -2px;
+    border-top: 2px solid var(--neon-cyan);
+    border-right: 2px solid var(--neon-cyan);
+    filter: drop-shadow(0 0 4px var(--neon-cyan));
+}
+.frame-corner-bl {
+    bottom: -2px; left: -2px;
+    border-bottom: 2px solid var(--neon-cyan);
+    border-left: 2px solid var(--neon-cyan);
+    filter: drop-shadow(0 0 4px var(--neon-cyan));
+}
+.frame-corner-br {
+    bottom: -2px; right: -2px;
+    border-bottom: 2px solid var(--neon-cyan);
+    border-right: 2px solid var(--neon-cyan);
+    filter: drop-shadow(0 0 4px var(--neon-cyan));
+}
+
+.frame-label {
+    position: absolute;
+    z-index: 4;
+    font-family: var(--font-heading);
+    font-size: 9px;
+    font-weight: 400;
+    color: var(--neon-cyan);
+    letter-spacing: 2px;
+    text-shadow: 0 0 6px rgba(0, 255, 255, 0.6);
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.frame-label-top {
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.frame-label-bottom {
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.scanlines {
+    position: absolute;
+    inset: 3px;
+    z-index: 2;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.08) 2px,
+        rgba(0, 0, 0, 0.08) 4px
+    );
+    clip-path: polygon(
+        11px 0%, calc(100% - 11px) 0%,
+        100% 11px, 100% calc(100% - 11px),
+        calc(100% - 11px) 100%, 11px 100%,
+        0% calc(100% - 11px), 0% 11px
+    );
+}
+
+.scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        transparent 50%,
+        rgba(0, 255, 255, 0.02) 50%
+    );
+    background-size: 100% 4px;
+    animation: scanmove 8s linear infinite;
+}
+
+@keyframes scanmove {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(4px); }
 }
 
 @media (max-width: 500px) {
+    .game-frame {
+        padding: 2px;
+    }
+    .frame-label {
+        font-size: 7px;
+    }
     canvas {
-        border: 1px solid #00ffff;
         width: 100vw;
         height: auto;
     }

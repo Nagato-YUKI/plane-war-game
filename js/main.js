@@ -85,20 +85,36 @@ const InputHandler = {
         const clickX = (event.clientX - rect.left) * scaleX;
         const clickY = (event.clientY - rect.top) * scaleY;
 
+        this.checkDifficultyClick(clickX, clickY);
         this.checkSkinSelectionClick(clickX, clickY);
         this.checkWeaponSelectionClick(clickX, clickY);
     },
 
+    checkDifficultyClick(clickX, clickY) {
+        const cx = CANVAS_WIDTH / 2;
+        const y = 172;
+        const keys = Object.keys(DIFFICULTY);
+        const spacing = 90;
+
+        for (let i = 0; i < keys.length; i++) {
+            const dx = cx + (i - 1.5) * spacing;
+            if (clickX >= dx - 36 && clickX <= dx + 36 && clickY >= y - 4 && clickY <= y + 18) {
+                GameEngine.selectDifficulty(keys[i]);
+                break;
+            }
+        }
+    },
+
     checkSkinSelectionClick(clickX, clickY) {
         const unlocked = getUnlockedSkins();
-        const y = CANVAS_HEIGHT / 2 + 100;
-        const spacing = 80;
+        const y = 230;
+        const spacing = 75;
         const totalWidth = unlocked.length * spacing;
         const startX = (CANVAS_WIDTH - totalWidth) / 2 + spacing / 2;
 
         for (let i = 0; i < unlocked.length; i++) {
             const x = startX + i * spacing;
-            if (clickX >= x - 24 && clickX <= x + 24 && clickY >= y - 10 && clickY <= y + 38) {
+            if (clickX >= x - 26 && clickX <= x + 26 && clickY >= y - 10 && clickY <= y + 42) {
                 GameEngine.selectSkin(unlocked[i]);
                 break;
             }
@@ -107,14 +123,14 @@ const InputHandler = {
 
     checkWeaponSelectionClick(clickX, clickY) {
         const unlocked = getUnlockedWeapons();
-        const y = CANVAS_HEIGHT / 2 + 190;
-        const spacing = 90;
+        const y = 316;
+        const spacing = 120;
         const totalWidth = unlocked.length * spacing;
         const startX = (CANVAS_WIDTH - totalWidth) / 2 + spacing / 2;
 
         for (let i = 0; i < unlocked.length; i++) {
             const x = startX + i * spacing;
-            if (clickX >= x - 35 && clickX <= x + 35 && clickY >= y - 5 && clickY <= y + 25) {
+            if (clickX >= x - 48 && clickX <= x + 48 && clickY >= y - 2 && clickY <= y + 28) {
                 GameEngine.selectWeapon(unlocked[i]);
                 break;
             }

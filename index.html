@@ -4,20 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>雷电战机</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
+    <div class="game-container">
+        <div class="game-frame">
+            <div class="frame-corner frame-corner-tl"></div>
+            <div class="frame-corner frame-corner-tr"></div>
+            <div class="frame-corner frame-corner-bl"></div>
+            <div class="frame-corner frame-corner-br"></div>
+            <div class="frame-label frame-label-top">RAIDEN FIGHTER v2.0</div>
+            <div class="frame-label frame-label-bottom">SYSTEM ONLINE</div>
+            <canvas id="gameCanvas"></canvas>
+            <div class="scanlines"></div>
+        </div>
+    </div>
 
-    <!-- 配置 -->
     <script src="js/config.js"></script>
     <script src="js/assets.js"></script>
 
-    <!-- 工具模块 -->
     <script src="js/utils/MathUtils.js"></script>
     <script src="js/utils/CollisionUtils.js"></script>
 
-    <!-- 核心系统 -->
     <script src="js/core/EffectSystem.js"></script>
     <script src="js/core/ScoreSystem.js"></script>
     <script src="js/core/Player.js"></script>
@@ -26,7 +37,6 @@
     <script src="js/core/ItemSystem.js"></script>
     <script src="js/core/GameEngine.js"></script>
 
-    <!-- 渲染模块 -->
     <script src="js/render/Renderer.js"></script>
     <script src="js/render/PlayerRenderer.js"></script>
     <script src="js/render/EnemyRenderer.js"></script>
@@ -35,7 +45,6 @@
     <script src="js/render/ItemRenderer.js"></script>
     <script src="js/render/UIRenderer.js"></script>
 
-    <!-- 入口 -->
     <script src="js/main.js"></script>
 </body>
 </html>

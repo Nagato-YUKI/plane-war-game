@@ -1,75 +1,332 @@
+const UI_COLORS = {
+    cyan: '#00ffff',
+    green: '#00ff88',
+    magenta: '#ff00ff',
+    orange: '#ff8800',
+    red: '#ff3366',
+    white: '#e0e8f0',
+    dim: '#4a5a6a',
+    bgDark: 'rgba(5,5,15,0.85)',
+    bgPanel: 'rgba(10,15,30,0.75)',
+    borderGlow: 'rgba(0,255,255,0.4)',
+    borderDim: 'rgba(0,255,255,0.15)'
+};
+
 const UIRenderer = {
+    _time: 0,
+
     drawHUD(ctx, player, difficulty, waveNumber, selectedSkin, selectedWeapon, weaponDurationRatio) {
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '16px monospace';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText(`分数: ${ScoreSystem.getScore()}`, 10, 10);
-        ctx.fillText(`最高分: ${ScoreSystem.getHighScore()}`, 10, 30);
-        ctx.fillText(`累计: ${ScoreSystem.getTotalScore()}`, 10, 50);
-
-        ctx.textAlign = 'right';
-        ctx.fillText(`波次: ${waveNumber}`, CANVAS_WIDTH - 10, 10);
-        ctx.fillText(
-            `武器: ${WEAPONS[player.weapon].name} Lv.${player.weaponLevel}`,
-            CANVAS_WIDTH - 10, 30
-        );
-
-        // 武器持续时间条
-        if (weaponDurationRatio > 0 && player.weaponLevel > 1) {
-            this.drawWeaponDurationBar(ctx, weaponDurationRatio);
-        }
-
-        ctx.textAlign = 'left';
-        ctx.fillText(`生命: ${player.lives}`, 10, CANVAS_HEIGHT - 30);
-        ctx.fillText(`炸弹: ${player.bombs}`, 10, CANVAS_HEIGHT - 50);
-
-        const skin = SKINS[selectedSkin];
-        ctx.fillText(`皮肤: ${skin.name}`, 10, 70);
-
-        // 连击显示 - 修复：使用整数
-        const combo = ScoreSystem.getComboCount();
-        if (combo > 0) {
-            const comboAlpha = Math.min(1, combo / 10);
-            ctx.fillStyle = `rgba(255, 200, 0, ${comboAlpha})`;
-            ctx.font = `bold ${16 + Math.min(combo, 20)}px monospace`;
-            ctx.textAlign = 'center';
-            ctx.fillText(`${combo}连击!`, CANVAS_WIDTH / 2, CANVAS_HEIGHT - 80);
-        }
+        this._time = Date.now();
+        this.drawTopBar(ctx, waveNumber, difficulty);
+        this.drawLivesBar(ctx, player);
+        this.drawBombsBar(ctx, player);
+        this.drawWeaponInfo(ctx, player, weaponDurationRatio);
+        this.drawBossHPBar(ctx);
+        this.drawCombo(ctx);
+        this.drawSkinIndicator(ctx, selectedSkin);
     },
 
-    drawWeaponDurationBar(ctx, ratio) {
-        const barWidth = 120;
-        const barHeight = 6;
-        const barX = CANVAS_WIDTH - 10 - barWidth;
-        const barY = 50;
+    drawTopBar(ctx, waveNumber, difficulty) {
+        ctx.save();
 
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(barX, barY, barWidth, barHeight);
+        const grad = ctx.createLinearGradient(0, 0, 0, 36);
+        grad.addColorStop(0, 'rgba(5,5,20,0.9)');
+        grad.addColorStop(1, 'rgba(5,5,20,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, CANVAS_WIDTH, 36);
 
-        const r = Math.floor((1 - ratio) * 255);
-        const g = Math.floor(ratio * 255);
-        ctx.fillStyle = `rgb(${r},${g},0)`;
-        ctx.fillRect(barX, barY, barWidth * ratio, barHeight);
-
-        ctx.strokeStyle = '#ffffff';
+        ctx.strokeStyle = UI_COLORS.borderDim;
         ctx.lineWidth = 1;
-        ctx.strokeRect(barX, barY, barWidth, barHeight);
+        ctx.beginPath();
+        ctx.moveTo(0, 35);
+        ctx.lineTo(CANVAS_WIDTH, 35);
+        ctx.stroke();
 
-        if (ratio < 0.2 && Math.floor(Date.now() / 200) % 2 === 0) {
-            ctx.fillStyle = 'rgba(255,0,0,0.3)';
-            ctx.fillRect(barX, barY, barWidth, barHeight);
+        ctx.font = '700 13px Orbitron, monospace';
+        ctx.textBaseline = 'middle';
+
+        ctx.fillStyle = UI_COLORS.cyan;
+        ctx.textAlign = 'left';
+        ctx.shadowColor = UI_COLORS.cyan;
+        ctx.shadowBlur = 6;
+        ctx.fillText('SCORE', 8, 10);
+        ctx.shadowBlur = 0;
+        ctx.font = '700 15px "JetBrains Mono", monospace';
+        ctx.fillStyle = UI_COLORS.white;
+        ctx.fillText(Math.floor(ScoreSystem.getScore()).toString().padStart(8, '0'), 8, 26);
+
+        ctx.font = '700 11px Orbitron, monospace';
+        ctx.fillStyle = UI_COLORS.dim;
+        ctx.textAlign = 'center';
+        ctx.fillText('WAVE', CANVAS_WIDTH / 2, 10);
+        ctx.font = '700 18px Orbitron, monospace';
+        ctx.fillStyle = UI_COLORS.green;
+        ctx.shadowColor = UI_COLORS.green;
+        ctx.shadowBlur = 8;
+        ctx.fillText(waveNumber.toString(), CANVAS_WIDTH / 2, 26);
+        ctx.shadowBlur = 0;
+
+        const diffDef = DIFFICULTY[difficulty] || DIFFICULTY.NORMAL;
+        const diffColors = { EASY: UI_COLORS.green, NORMAL: UI_COLORS.cyan, HARD: UI_COLORS.orange, LUNATIC: UI_COLORS.magenta };
+        ctx.font = '600 9px Orbitron, monospace';
+        ctx.fillStyle = diffColors[difficulty] || UI_COLORS.cyan;
+        ctx.fillText(diffDef.name, CANVAS_WIDTH / 2, 35);
+
+        ctx.font = '700 10px Orbitron, monospace';
+        ctx.fillStyle = UI_COLORS.dim;
+        ctx.textAlign = 'right';
+        ctx.fillText('HI-SCORE', CANVAS_WIDTH - 8, 10);
+        ctx.font = '700 13px "JetBrains Mono", monospace';
+        ctx.fillStyle = UI_COLORS.orange;
+        ctx.shadowColor = UI_COLORS.orange;
+        ctx.shadowBlur = 4;
+        ctx.fillText(Math.floor(ScoreSystem.getHighScore()).toString().padStart(8, '0'), CANVAS_WIDTH - 8, 26);
+        ctx.shadowBlur = 0;
+
+        ctx.restore();
+    },
+
+    drawLivesBar(ctx, player) {
+        ctx.save();
+        const y = CANVAS_HEIGHT - 28;
+
+        ctx.fillStyle = UI_COLORS.bgPanel;
+        ctx.fillRect(0, y - 4, 110, 32);
+
+        ctx.strokeStyle = UI_COLORS.borderDim;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, y - 4, 110, 32);
+
+        ctx.font = '600 9px Orbitron, monospace';
+        ctx.fillStyle = UI_COLORS.dim;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('LIFE', 6, y + 4);
+
+        for (let i = 0; i < player.lives; i++) {
+            const ix = 42 + i * 16;
+            ctx.fillStyle = UI_COLORS.green;
+            ctx.shadowColor = UI_COLORS.green;
+            ctx.shadowBlur = 4;
+            ctx.beginPath();
+            ctx.moveTo(ix, y);
+            ctx.lineTo(ix - 5, y + 8);
+            ctx.lineTo(ix, y + 6);
+            ctx.lineTo(ix + 5, y + 8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.shadowBlur = 0;
         }
+
+        ctx.restore();
+    },
+
+    drawBombsBar(ctx, player) {
+        ctx.save();
+        const y = CANVAS_HEIGHT - 28;
+        const startX = 115;
+
+        ctx.fillStyle = UI_COLORS.bgPanel;
+        ctx.fillRect(startX, y - 4, 80, 32);
+
+        ctx.strokeStyle = UI_COLORS.borderDim;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(startX, y - 4, 80, 32);
+
+        ctx.font = '600 9px Orbitron, monospace';
+        ctx.fillStyle = UI_COLORS.dim;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('BOMB', startX + 4, y + 4);
+
+        for (let i = 0; i < player.bombs; i++) {
+            const ix = startX + 44 + i * 10;
+            ctx.fillStyle = UI_COLORS.orange;
+            ctx.shadowColor = UI_COLORS.orange;
+            ctx.shadowBlur = 3;
+            ctx.beginPath();
+            ctx.arc(ix, y + 4, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        ctx.restore();
+    },
+
+    drawWeaponInfo(ctx, player, weaponDurationRatio) {
+        ctx.save();
+        const wpn = WEAPONS[player.weapon];
+        const y = CANVAS_HEIGHT - 28;
+        const x = CANVAS_WIDTH - 140;
+
+        ctx.fillStyle = UI_COLORS.bgPanel;
+        ctx.fillRect(x, y - 4, 140, 32);
+
+        ctx.strokeStyle = UI_COLORS.borderDim;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y - 4, 140, 32);
+
+        ctx.font = '600 9px Orbitron, monospace';
+        ctx.fillStyle = UI_COLORS.dim;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('WEAPON', x + 6, y + 2);
+
+        ctx.font = '700 11px "JetBrains Mono", monospace';
+        ctx.fillStyle = wpn.color || UI_COLORS.cyan;
+        ctx.shadowColor = wpn.color || UI_COLORS.cyan;
+        ctx.shadowBlur = 4;
+        ctx.fillText(`${wpn.name} Lv.${player.weaponLevel}`, x + 56, y + 2);
+        ctx.shadowBlur = 0;
+
+        if (weaponDurationRatio > 0 && player.weaponLevel > 1) {
+            const barX = x + 6;
+            const barY = y + 12;
+            const barW = 128;
+            const barH = 5;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(barX, barY, barW, barH);
+
+            const r = Math.floor((1 - weaponDurationRatio) * 255);
+            const g = Math.floor(weaponDurationRatio * 200);
+            ctx.fillStyle = `rgb(${r},${g},0)`;
+            ctx.shadowColor = `rgb(${r},${g},0)`;
+            ctx.shadowBlur = 4;
+            ctx.fillRect(barX, barY, barW * weaponDurationRatio, barH);
+            ctx.shadowBlur = 0;
+
+            if (weaponDurationRatio < 0.2 && Math.floor(this._time / 200) % 2 === 0) {
+                ctx.fillStyle = 'rgba(255,0,0,0.3)';
+                ctx.fillRect(barX, barY, barW, barH);
+            }
+        }
+
+        ctx.restore();
+    },
+
+    drawBossHPBar(ctx) {
+        const enemies = EnemyManager.getEnemies();
+        let boss = null;
+        for (const e of enemies) {
+            if (e.type === 'boss') { boss = e; break; }
+        }
+        if (!boss) return;
+
+        ctx.save();
+        const barW = CANVAS_WIDTH - 80;
+        const barH = 10;
+        const barX = 40;
+        const barY = 44;
+        const ratio = Math.max(0, boss.hp / boss.maxHp);
+
+        ctx.fillStyle = UI_COLORS.bgPanel;
+        ctx.fillRect(barX - 4, barY - 12, barW + 8, barH + 20);
+
+        this.drawHUDBrackets(ctx, barX - 4, barY - 12, barW + 8, barH + 20);
+
+        ctx.font = '700 9px Orbitron, monospace';
+        ctx.fillStyle = UI_COLORS.red;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = UI_COLORS.red;
+        ctx.shadowBlur = 4;
+        const bossType = BOSS_TYPES[boss.bossType];
+        ctx.fillText(bossType ? bossType.name : 'BOSS', barX, barY - 4);
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = 'rgba(40,0,0,0.8)';
+        ctx.fillRect(barX, barY + 2, barW, barH);
+
+        const hpGrad = ctx.createLinearGradient(barX, 0, barX + barW * ratio, 0);
+        hpGrad.addColorStop(0, '#ff3366');
+        hpGrad.addColorStop(1, '#ff6644');
+        ctx.fillStyle = hpGrad;
+        ctx.shadowColor = UI_COLORS.red;
+        ctx.shadowBlur = 6;
+        ctx.fillRect(barX, barY + 2, barW * ratio, barH);
+        ctx.shadowBlur = 0;
+
+        ctx.restore();
+    },
+
+    drawHUDBrackets(ctx, x, y, w, h) {
+        ctx.strokeStyle = UI_COLORS.cyan;
+        ctx.lineWidth = 1;
+        ctx.shadowColor = UI_COLORS.cyan;
+        ctx.shadowBlur = 3;
+        const c = 6;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y + c); ctx.lineTo(x, y); ctx.lineTo(x + c, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + w - c, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + c);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y + h - c); ctx.lineTo(x, y + h); ctx.lineTo(x + c, y + h);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + w - c, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - c);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    },
+
+    drawCombo(ctx) {
+        const combo = ScoreSystem.getComboCount();
+        if (combo <= 0) return;
+
+        ctx.save();
+        const alpha = Math.min(1, combo / 10);
+        const size = 18 + Math.min(combo, 20) * 0.5;
+        const y = CANVAS_HEIGHT - 60;
+
+        ctx.font = `700 ${size}px Orbitron, monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.fillStyle = `rgba(255, 200, 0, ${alpha * 0.3})`;
+        ctx.shadowColor = '#ff8800';
+        ctx.shadowBlur = 12;
+        ctx.fillText(`${combo} HIT`, CANVAS_WIDTH / 2, y);
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = `rgba(255, 220, 50, ${alpha})`;
+        ctx.fillText(`${combo} HIT`, CANVAS_WIDTH / 2, y);
+
+        ctx.restore();
+    },
+
+    drawSkinIndicator(ctx, selectedSkin) {
+        const skin = SKINS[selectedSkin];
+        if (!skin) return;
+
+        ctx.save();
+        const x = 6;
+        const y = 42;
+
+        ctx.font = '600 8px Orbitron, monospace';
+        ctx.fillStyle = skin.colors.glow || UI_COLORS.dim;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(skin.name, x, y);
+
+        ctx.restore();
     },
 
     drawScorePopups(ctx, popups) {
         for (const popup of popups) {
             const alpha = popup.life / popup.maxLife;
-            ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`;
-            ctx.font = `bold ${16 + alpha * 4}px monospace`;
+            ctx.save();
+            ctx.fillStyle = `rgba(255, 255, 100, ${alpha})`;
+            ctx.font = `bold ${14 + alpha * 4}px "JetBrains Mono", monospace`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(255,200,0,0.5)';
+            ctx.shadowBlur = 4;
             ctx.fillText(`+${popup.value}`, popup.x, popup.y);
+            ctx.shadowBlur = 0;
+            ctx.restore();
         }
     },
 
@@ -77,125 +334,309 @@ const UIRenderer = {
         for (let i = 0; i < notifications.length; i++) {
             const notif = notifications[i];
             const alpha = notif.life / notif.maxLife;
-            const y = CANVAS_HEIGHT / 2 - i * 40;
+            const y = CANVAS_HEIGHT / 2 - 40 - i * 36;
 
             ctx.save();
             ctx.globalAlpha = alpha;
-            ctx.fillStyle = '#ffaa00';
-            ctx.font = 'bold 20px monospace';
+            ctx.font = 'bold 18px Orbitron, monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.shadowColor = '#ff6600';
-            ctx.shadowBlur = 10;
+
+            ctx.fillStyle = UI_COLORS.orange;
+            ctx.shadowColor = UI_COLORS.orange;
+            ctx.shadowBlur = 12;
             ctx.fillText(notif.text, CANVAS_WIDTH / 2, y);
+
+            ctx.fillStyle = '#ffffff';
             ctx.shadowBlur = 0;
+            ctx.fillText(notif.text, CANVAS_WIDTH / 2, y);
+
             ctx.restore();
         }
     },
 
     drawStartScreen(ctx) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        this._time = Date.now();
+
+        ctx.fillStyle = 'rgba(5, 5, 15, 0.85)';
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        ctx.fillStyle = '#00ffff';
-        ctx.font = 'bold 48px monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.shadowColor = '#00ffff';
-        ctx.shadowBlur = 20;
-        ctx.fillText('雷电战机', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 100);
-        ctx.shadowBlur = 0;
+        this.drawVignette(ctx);
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '20px monospace';
-        ctx.fillText('按空格键开始', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
-        ctx.fillText('方向键移动 | 空格射击 | B炸弹', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30);
-        ctx.fillText('鼠标/触摸: 拖动移动+自动射击', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 55);
-
+        this.drawTitleSection(ctx);
+        this.drawDifficultySelection(ctx);
         this.drawSkinSelection(ctx);
         this.drawWeaponSelection(ctx);
+        this.drawControlsInfo(ctx);
+    },
+
+    drawTitleSection(ctx) {
+        const cx = CANVAS_WIDTH / 2;
+        const cy = 80;
+        const pulse = Math.sin(this._time / 600) * 0.15 + 0.85;
+
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.font = '900 38px Orbitron, monospace';
+        ctx.fillStyle = `rgba(0, 255, 255, ${pulse})`;
+        ctx.shadowColor = '#00ffff';
+        ctx.shadowBlur = 20;
+        ctx.fillText('RAIDEN', cx, cy);
+        ctx.shadowBlur = 0;
+
+        ctx.font = '400 16px Orbitron, monospace';
+        ctx.fillStyle = `rgba(0, 255, 136, ${pulse * 0.9})`;
+        ctx.shadowColor = '#00ff88';
+        ctx.shadowBlur = 10;
+        ctx.fillText('FIGHTER', cx, cy + 30);
+        ctx.shadowBlur = 0;
+
+        const lineY = cy + 48;
+        const lineW = 120;
+        ctx.strokeStyle = `rgba(0, 255, 255, ${pulse * 0.5})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cx - lineW, lineY);
+        ctx.lineTo(cx + lineW, lineY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(cx - 4, lineY - 3);
+        ctx.lineTo(cx + 4, lineY + 3);
+        ctx.moveTo(cx + 4, lineY - 3);
+        ctx.lineTo(cx - 4, lineY + 3);
+        ctx.strokeStyle = UI_COLORS.cyan;
+        ctx.stroke();
+
+        const blink = Math.floor(this._time / 800) % 2;
+        if (blink) {
+            ctx.font = '600 12px Orbitron, monospace';
+            ctx.fillStyle = UI_COLORS.white;
+            ctx.fillText('PRESS SPACE TO START', cx, cy + 68);
+        }
+
+        ctx.restore();
+    },
+
+    drawDifficultySelection(ctx) {
+        const cx = CANVAS_WIDTH / 2;
+        const y = 172;
+        const keys = Object.keys(DIFFICULTY);
+        const currentDiff = GameEngine ? GameEngine.getDifficulty() : 'NORMAL';
+        const spacing = 90;
+
+        ctx.save();
+        ctx.font = '600 9px Orbitron, monospace';
+        ctx.fillStyle = UI_COLORS.dim;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('DIFFICULTY', cx, y - 14);
+
+        const diffColors = {
+            EASY: UI_COLORS.green,
+            NORMAL: UI_COLORS.cyan,
+            HARD: UI_COLORS.orange,
+            LUNATIC: UI_COLORS.magenta
+        };
+
+        for (let i = 0; i < keys.length; i++) {
+            const diff = DIFFICULTY[keys[i]];
+            const dx = cx + (i - 1.5) * spacing;
+            const isSelected = keys[i] === currentDiff;
+
+            if (isSelected) {
+                ctx.strokeStyle = diffColors[keys[i]] || UI_COLORS.cyan;
+                ctx.lineWidth = 1;
+                ctx.shadowColor = diffColors[keys[i]] || UI_COLORS.cyan;
+                ctx.shadowBlur = 6;
+                ctx.strokeRect(dx - 36, y - 4, 72, 22);
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = `rgba(${this.hexToRgb(diffColors[keys[i]])}, 0.1)`;
+                ctx.fillRect(dx - 36, y - 4, 72, 22);
+            }
+
+            ctx.font = isSelected ? '700 11px Orbitron, monospace' : '400 10px Orbitron, monospace';
+            ctx.fillStyle = isSelected ? (diffColors[keys[i]] || UI_COLORS.cyan) : UI_COLORS.dim;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(diff.name, dx, y + 7);
+        }
+
+        ctx.restore();
+    },
+
+    hexToRgb(hex) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `${r},${g},${b}`;
     },
 
     drawSkinSelection(ctx) {
         const unlocked = getUnlockedSkins();
-        const y = CANVAS_HEIGHT / 2 + 100;
-        const spacing = 80;
+        const y = 230;
+        const spacing = 75;
         const totalWidth = unlocked.length * spacing;
         const startX = (CANVAS_WIDTH - totalWidth) / 2 + spacing / 2;
         const currentSkin = GameEngine ? GameEngine.getSelectedSkin() : 'default';
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '14px monospace';
+        ctx.save();
+        ctx.font = '600 9px Orbitron, monospace';
+        ctx.fillStyle = UI_COLORS.dim;
         ctx.textAlign = 'center';
-        ctx.fillText('选择皮肤:', CANVAS_WIDTH / 2, y - 30);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('SELECT SKIN', CANVAS_WIDTH / 2, y - 18);
 
         for (let i = 0; i < unlocked.length; i++) {
             const skinId = unlocked[i];
             const skin = SKINS[skinId];
+            if (!skin) continue;
             const x = startX + i * spacing;
             const isSelected = skinId === currentSkin;
 
             if (isSelected) {
-                ctx.strokeStyle = '#00ff00';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(x - 24, y - 10, 48, 48);
+                ctx.strokeStyle = skin.colors.glow || UI_COLORS.cyan;
+                ctx.lineWidth = 1;
+                ctx.shadowColor = skin.colors.glow || UI_COLORS.cyan;
+                ctx.shadowBlur = 6;
+                this.drawChamferedRect(ctx, x - 26, y - 10, 52, 52, 4);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = `rgba(${this.hexToRgb(skin.colors.glow || '#00ffff')}, 0.08)`;
+                this.drawChamferedRect(ctx, x - 26, y - 10, 52, 52, 4);
+                ctx.fill();
+            } else {
+                ctx.strokeStyle = UI_COLORS.borderDim;
+                ctx.lineWidth = 1;
+                this.drawChamferedRect(ctx, x - 26, y - 10, 52, 52, 4);
+                ctx.stroke();
             }
 
-            // 绘制矢量飞机预览
             ctx.save();
-            ctx.translate(x, y + 16);
+            ctx.translate(x, y + 14);
             this.drawSkinPreview(ctx, skin);
             ctx.restore();
 
-            ctx.fillStyle = isSelected ? '#00ff00' : '#aaaaaa';
-            ctx.font = '10px monospace';
+            ctx.fillStyle = isSelected ? (skin.colors.glow || UI_COLORS.cyan) : UI_COLORS.dim;
+            ctx.font = isSelected ? '600 9px "JetBrains Mono", monospace' : '400 8px "JetBrains Mono", monospace';
             ctx.textAlign = 'center';
-            if (skin && skin.name) {
-                ctx.fillText(skin.name, x, y + 45);
-            }
+            ctx.fillText(skin.name, x, y + 48);
         }
+
+        ctx.restore();
     },
 
     drawWeaponSelection(ctx) {
         const unlocked = getUnlockedWeapons();
-        const y = CANVAS_HEIGHT / 2 + 190;
-        const spacing = 90;
+        const y = 316;
+        const spacing = 120;
         const totalWidth = unlocked.length * spacing;
         const startX = (CANVAS_WIDTH - totalWidth) / 2 + spacing / 2;
         const currentWeapon = GameEngine ? GameEngine.getSelectedWeapon() : 'vulcan';
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '14px monospace';
+        ctx.save();
+        ctx.font = '600 9px Orbitron, monospace';
+        ctx.fillStyle = UI_COLORS.dim;
         ctx.textAlign = 'center';
-        ctx.fillText('选择武器:', CANVAS_WIDTH / 2, y - 20);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('SELECT WEAPON', CANVAS_WIDTH / 2, y - 14);
 
         for (let i = 0; i < unlocked.length; i++) {
             const wpnId = unlocked[i];
             const wpn = WEAPONS[wpnId];
+            if (!wpn) continue;
             const x = startX + i * spacing;
             const isSelected = wpnId === currentWeapon;
 
             if (isSelected) {
-                ctx.strokeStyle = '#00ff00';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(x - 35, y - 5, 70, 30);
+                ctx.strokeStyle = wpn.color || UI_COLORS.cyan;
+                ctx.lineWidth = 1;
+                ctx.shadowColor = wpn.color || UI_COLORS.cyan;
+                ctx.shadowBlur = 6;
+                this.drawChamferedRect(ctx, x - 48, y - 2, 96, 30, 4);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = `rgba(${this.hexToRgb(wpn.color || '#00ffff')}, 0.08)`;
+                this.drawChamferedRect(ctx, x - 48, y - 2, 96, 30, 4);
+                ctx.fill();
+            } else {
+                ctx.strokeStyle = UI_COLORS.borderDim;
+                ctx.lineWidth = 1;
+                this.drawChamferedRect(ctx, x - 48, y - 2, 96, 30, 4);
+                ctx.stroke();
             }
 
-            ctx.fillStyle = isSelected ? wpn.color : '#888888';
-            ctx.font = '12px monospace';
+            ctx.fillStyle = isSelected ? (wpn.color || UI_COLORS.cyan) : UI_COLORS.dim;
+            ctx.font = isSelected ? '700 11px Orbitron, monospace' : '400 10px "JetBrains Mono", monospace';
             ctx.textAlign = 'center';
-            ctx.fillText(wpn.name, x, y + 10);
+            ctx.textBaseline = 'middle';
+            ctx.fillText(wpn.name, x, y + 13);
         }
+
+        ctx.restore();
+    },
+
+    drawControlsInfo(ctx) {
+        const cx = CANVAS_WIDTH / 2;
+        const y = 380;
+
+        ctx.save();
+
+        ctx.strokeStyle = UI_COLORS.borderDim;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(40, y - 8);
+        ctx.lineTo(CANVAS_WIDTH - 40, y - 8);
+        ctx.stroke();
+
+        ctx.font = '400 9px "JetBrains Mono", monospace';
+        ctx.fillStyle = UI_COLORS.dim;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const lines = [
+            'WASD/Arrows: Move  |  Space: Shoot  |  B: Bomb',
+            'Mouse/Touch: Drag to Move + Auto Shoot'
+        ];
+
+        lines.forEach((line, i) => {
+            ctx.fillText(line, cx, y + 8 + i * 16);
+        });
+
+        const total = ScoreSystem.getTotalScore();
+        ctx.font = '600 10px Orbitron, monospace';
+        ctx.fillStyle = UI_COLORS.orange;
+        ctx.fillText(`TOTAL SCORE: ${Math.floor(total)}`, cx, y + 48);
+
+        ctx.restore();
+    },
+
+    drawChamferedRect(ctx, x, y, w, h, c) {
+        ctx.beginPath();
+        ctx.moveTo(x + c, y);
+        ctx.lineTo(x + w - c, y);
+        ctx.lineTo(x + w, y + c);
+        ctx.lineTo(x + w, y + h - c);
+        ctx.lineTo(x + w - c, y + h);
+        ctx.lineTo(x + c, y + h);
+        ctx.lineTo(x, y + h - c);
+        ctx.lineTo(x, y + c);
+        ctx.closePath();
     },
 
     drawSkinPreview(ctx, skin) {
+        if (!skin || !skin.colors) return;
         const w = 36;
         const h = 40;
         const c = skin.colors;
 
         ctx.globalAlpha = skin.opacity || 1;
 
-        // 主体机翼
         ctx.fillStyle = c.primary;
         ctx.beginPath();
         ctx.moveTo(0, -h / 2 + 2);
@@ -209,7 +650,6 @@ const UIRenderer = {
         ctx.closePath();
         ctx.fill();
 
-        // 机身
         ctx.fillStyle = c.secondary;
         ctx.beginPath();
         ctx.moveTo(0, -h / 2 + 8);
@@ -218,13 +658,11 @@ const UIRenderer = {
         ctx.closePath();
         ctx.fill();
 
-        // 驾驶舱
         ctx.fillStyle = c.core;
         ctx.beginPath();
         ctx.ellipse(0, -h / 2 + 14, w / 10, h / 12, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 外发光
         ctx.shadowColor = c.glow;
         ctx.shadowBlur = 6;
         ctx.strokeStyle = c.glow;
@@ -236,25 +674,100 @@ const UIRenderer = {
     },
 
     drawGameOverScreen(ctx) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        this._time = Date.now();
+
+        ctx.fillStyle = 'rgba(20, 0, 0, 0.85)';
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        ctx.fillStyle = '#ff4444';
-        ctx.font = 'bold 48px monospace';
+        this.drawVignette(ctx, '#ff3366');
+
+        const cx = CANVAS_WIDTH / 2;
+        const pulse = Math.sin(this._time / 400) * 0.2 + 0.8;
+
+        ctx.save();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.shadowColor = '#ff0000';
+
+        ctx.font = '900 36px Orbitron, monospace';
+        ctx.fillStyle = `rgba(255, 51, 102, ${pulse})`;
+        ctx.shadowColor = '#ff3366';
         ctx.shadowBlur = 20;
-        ctx.fillText('游戏结束', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 60);
+        ctx.fillText('GAME OVER', cx, 160);
         ctx.shadowBlur = 0;
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '24px monospace';
-        ctx.fillText(`最终分数: ${ScoreSystem.getScore()}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 10);
-        ctx.fillText(`最高分: ${ScoreSystem.getHighScore()}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 40);
-        ctx.fillText(`累计分数: ${ScoreSystem.getTotalScore()}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 70);
+        const panelX = cx - 140;
+        const panelY = 210;
+        const panelW = 280;
+        const panelH = 180;
 
-        ctx.font = '18px monospace';
-        ctx.fillText('按空格键重新开始', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 120);
+        ctx.fillStyle = 'rgba(10, 5, 15, 0.8)';
+        this.drawChamferedRect(ctx, panelX, panelY, panelW, panelH, 6);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255, 51, 102, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.shadowColor = 'rgba(255, 51, 102, 0.3)';
+        ctx.shadowBlur = 4;
+        this.drawChamferedRect(ctx, panelX, panelY, panelW, panelH, 6);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        this.drawHUDBrackets(ctx, panelX + 4, panelY + 4, panelW - 8, panelH - 8);
+
+        const stats = [
+            { label: 'SCORE', value: Math.floor(ScoreSystem.getScore()), color: UI_COLORS.cyan },
+            { label: 'HI-SCORE', value: Math.floor(ScoreSystem.getHighScore()), color: UI_COLORS.orange },
+            { label: 'TOTAL', value: Math.floor(ScoreSystem.getTotalScore()), color: UI_COLORS.green }
+        ];
+
+        stats.forEach((s, i) => {
+            const sy = panelY + 24 + i * 44;
+
+            ctx.font = '600 9px Orbitron, monospace';
+            ctx.fillStyle = UI_COLORS.dim;
+            ctx.textAlign = 'left';
+            ctx.fillText(s.label, panelX + 20, sy);
+
+            ctx.font = '700 18px "JetBrains Mono", monospace';
+            ctx.fillStyle = s.color;
+            ctx.shadowColor = s.color;
+            ctx.shadowBlur = 4;
+            ctx.textAlign = 'right';
+            ctx.fillText(s.value.toString().padStart(8, '0'), panelX + panelW - 20, sy);
+            ctx.shadowBlur = 0;
+
+            if (i < stats.length - 1) {
+                ctx.strokeStyle = UI_COLORS.borderDim;
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(panelX + 16, sy + 18);
+                ctx.lineTo(panelX + panelW - 16, sy + 18);
+                ctx.stroke();
+            }
+        });
+
+        const blink = Math.floor(this._time / 600) % 2;
+        if (blink) {
+            ctx.font = '600 12px Orbitron, monospace';
+            ctx.fillStyle = UI_COLORS.white;
+            ctx.textAlign = 'center';
+            ctx.fillText('PRESS SPACE TO RETRY', cx, panelY + panelH + 30);
+        }
+
+        ctx.restore();
+    },
+
+    drawVignette(ctx, color) {
+        const vignetteColor = color || '#00ffff';
+        ctx.save();
+        const grad = ctx.createRadialGradient(
+            CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_HEIGHT * 0.3,
+            CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_HEIGHT * 0.7
+        );
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, `rgba(${this.hexToRgb(vignetteColor)}, 0.05)`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.restore();
     }
 };
