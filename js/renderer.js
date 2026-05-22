@@ -144,6 +144,7 @@ function drawPlayerFallback(skin) {
 }
 
 function drawBullets() {
+    // 玩家子弹
     for (const bullet of playerBullets) {
         if (bullet.weaponType === 'laser') {
             const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
@@ -187,7 +188,23 @@ function drawBullets() {
         }
     }
 
+    // 敌人子弹 - 带拖尾效果
     for (const bullet of enemyBullets) {
+        // 绘制拖尾
+        if (bullet.trail && bullet.trail.length > 1) {
+            for (let i = 0; i < bullet.trail.length - 1; i++) {
+                const alpha = (i / bullet.trail.length) * 0.5;
+                ctx.strokeStyle = bullet.color || '#ff0044';
+                ctx.globalAlpha = alpha;
+                ctx.lineWidth = bullet.width * (i / bullet.trail.length);
+                ctx.beginPath();
+                ctx.moveTo(bullet.trail[i].x, bullet.trail[i].y);
+                ctx.lineTo(bullet.trail[i + 1].x, bullet.trail[i + 1].y);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+
         const asset = getAsset('bullet_enemy');
         if (asset) {
             ctx.drawImage(
@@ -198,13 +215,13 @@ function drawBullets() {
                 bullet.height
             );
         } else {
-            ctx.fillStyle = '#ff0044';
-            ctx.fillRect(
-                bullet.x - bullet.width / 2,
-                bullet.y,
-                bullet.width,
-                bullet.height
-            );
+            ctx.fillStyle = bullet.color || '#ff0044';
+            ctx.shadowColor = bullet.color || '#ff0044';
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(bullet.x, bullet.y, bullet.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
         }
     }
 }
@@ -346,12 +363,48 @@ function drawHUD() {
         30
     );
 
+    // 武器持续时间条
+    if (weaponDurationMax > 0 && player.weaponLevel > 1) {
+        const barWidth = 120;
+        const barHeight = 6;
+        const barX = CANVAS_WIDTH - 10 - barWidth;
+        const barY = 50;
+        const ratio = Math.max(0, weaponDurationTimer / weaponDurationMax);
+        
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+        
+        const r = Math.floor((1 - ratio) * 255);
+        const g = Math.floor(ratio * 255);
+        ctx.fillStyle = `rgb(${r},${g},0)`;
+        ctx.fillRect(barX, barY, barWidth * ratio, barHeight);
+        
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, barY, barWidth, barHeight);
+        
+        // 闪烁提示即将失效
+        if (ratio < 0.2 && Math.floor(Date.now() / 200) % 2 === 0) {
+            ctx.fillStyle = 'rgba(255,0,0,0.3)';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+        }
+    }
+
     ctx.textAlign = 'left';
     ctx.fillText(`生命: ${player.lives}`, 10, CANVAS_HEIGHT - 30);
     ctx.fillText(`炸弹: ${player.bombs}`, 10, CANVAS_HEIGHT - 50);
 
     const skin = SKINS[selectedSkin];
     ctx.fillText(`皮肤: ${skin.name}`, 10, 70);
+    
+    // 连击显示
+    if (comboCount > 0) {
+        const comboAlpha = Math.min(1, comboCount / 10);
+        ctx.fillStyle = `rgba(255, 200, 0, ${comboAlpha})`;
+        ctx.font = `bold ${16 + Math.min(comboCount, 20)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`${comboCount}连击!`, CANVAS_WIDTH / 2, CANVAS_HEIGHT - 80);
+    }
 }
 
 function drawStartScreen() {
@@ -364,7 +417,7 @@ function drawStartScreen() {
     ctx.textBaseline = 'middle';
     ctx.shadowColor = '#00ffff';
     ctx.shadowBlur = 20;
-    ctx.fillText('飞机大战', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 100);
+    ctx.fillText('雷电战机', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 100);
     ctx.shadowBlur = 0;
 
     ctx.fillStyle = '#ffffff';
@@ -418,7 +471,10 @@ function drawSkinSelection() {
 
         ctx.fillStyle = isSelected ? '#00ff00' : '#aaaaaa';
         ctx.font = '10px monospace';
-        ctx.fillText(skin.name, x, y + 45);
+        ctx.textAlign = 'center';
+        if (skin && skin.name) {
+            ctx.fillText(skin.name, x, y + 45);
+        }
     }
 }
 

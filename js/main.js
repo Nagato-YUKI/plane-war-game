@@ -122,6 +122,9 @@ function startGame() {
     gameStartTime = Date.now();
     player.weapon = selectedWeapon;
     player.weaponLevel = 1;
+    // 重置武器持续时间
+    weaponDurationTimer = 0;
+    weaponDurationMax = 0;
 }
 
 function resetGame() {
@@ -147,6 +150,15 @@ function resetGame() {
     screenShake = { x: 0, y: 0, intensity: 0 };
     lastBulletTime = 0;
     lastEnemySpawnTime = 0;
+    // 重置武器持续时间
+    weaponDurationTimer = 0;
+    weaponDurationMax = 0;
+    comboCount = 0;
+    comboTimer = 0;
+    comboMax = 0;
+    grazeCount = 0;
+    grazeTotal = 0;
+    bossNoDamage = true;
     startGame();
 }
 
