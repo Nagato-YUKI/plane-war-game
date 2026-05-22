@@ -17,10 +17,9 @@ const STAR_COUNT = 120;
 const PARTICLE_LIMIT = 500;
 const BULLET_LIMIT = 300;
 
-// 武器持续时间配置（毫秒）
-const WEAPON_DURATION = 15000; // 15秒基础持续时间
-const WEAPON_DURATION_PER_LEVEL = 2000; // 每级减少2秒
-const WEAPON_MIN_DURATION = 5000; // 最少5秒
+const WEAPON_DURATION = 15000;
+const WEAPON_DURATION_PER_LEVEL = 2000;
+const WEAPON_MIN_DURATION = 5000;
 
 const GAME_STATE = {
     START: 'start',
@@ -274,7 +273,7 @@ const ITEM_TYPES = {
         effect: 'weaponLevelUp',
         size: 24,
         color: '#00ff00',
-        duration: 10000, // 10秒持续时间
+        duration: 10000,
         dropRates: { drone: 0.08, fighter: 0.15, bomber: 0.25, elite: 0.2, boss: 0.5 }
     },
     weaponSwitch: {
@@ -283,7 +282,7 @@ const ITEM_TYPES = {
         effect: 'switchWeapon',
         size: 24,
         color: '#ff00ff',
-        duration: 15000, // 15秒持续时间
+        duration: 15000,
         dropRates: { drone: 0.02, fighter: 0.05, bomber: 0.1, elite: 0.08, boss: 0.3 }
     },
     speedUp: {

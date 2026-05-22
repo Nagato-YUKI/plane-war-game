@@ -3,15 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>飞机大战 - 雷电风格</title>
+    <title>雷电战机</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
+
+    <!-- 配置 -->
     <script src="js/config.js"></script>
     <script src="js/assets.js"></script>
-    <script src="js/renderer.js"></script>
-    <script src="js/game.js"></script>
+
+    <!-- 工具模块 -->
+    <script src="js/utils/MathUtils.js"></script>
+    <script src="js/utils/CollisionUtils.js"></script>
+
+    <!-- 核心系统 -->
+    <script src="js/core/EffectSystem.js"></script>
+    <script src="js/core/ScoreSystem.js"></script>
+    <script src="js/core/Player.js"></script>
+    <script src="js/core/BulletSystem.js"></script>
+    <script src="js/core/EnemyManager.js"></script>
+    <script src="js/core/ItemSystem.js"></script>
+    <script src="js/core/GameEngine.js"></script>
+
+    <!-- 渲染模块 -->
+    <script src="js/render/Renderer.js"></script>
+    <script src="js/render/PlayerRenderer.js"></script>
+    <script src="js/render/EnemyRenderer.js"></script>
+    <script src="js/render/BulletRenderer.js"></script>
+    <script src="js/render/EffectRenderer.js"></script>
+    <script src="js/render/ItemRenderer.js"></script>
+    <script src="js/render/UIRenderer.js"></script>
+
+    <!-- 入口 -->
     <script src="js/main.js"></script>
 </body>
 </html>
