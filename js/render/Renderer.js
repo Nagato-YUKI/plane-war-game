@@ -76,6 +76,7 @@ const Renderer = {
         this.drawStars();
         EffectRenderer.drawParticles(this.ctx);
         EffectRenderer.drawEngineParticles(this.ctx);
+        EffectRenderer.drawBulletHitEffects(this.ctx);
 
         if (gameState === GAME_STATE.PLAYING || gameState === GAME_STATE.GAME_OVER) {
             ItemRenderer.draw(this.ctx, ItemSystem.getItems());

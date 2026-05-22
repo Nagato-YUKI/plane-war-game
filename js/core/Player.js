@@ -14,6 +14,9 @@ const Player = {
     speedBoostUntil: 0,
     speedBoostLevel: 0,
     lastBulletTime: 0,
+    tiltAngle: 0,
+    hitFlash: 0,
+    isShooting: false,
 
     init() {
         this.x = CANVAS_WIDTH / 2 - PLAYER_WIDTH / 2;
@@ -27,26 +30,32 @@ const Player = {
         this.speedBoostUntil = 0;
         this.speedBoostLevel = 0;
         this.lastBulletTime = 0;
+        this.tiltAngle = 0;
+        this.hitFlash = 0;
+        this.isShooting = false;
     },
 
     update(keys, mouseControl, mouseX, mouseY, touchControl, touchX, touchY) {
         let targetX = this.x;
         let targetY = this.y;
         let isMoving = false;
+        let moveDirX = 0;
 
         if (touchControl) {
             targetX = touchX - this.width / 2;
             targetY = touchY - this.height / 2;
             isMoving = true;
+            moveDirX = targetX - this.x;
         } else if (mouseControl) {
             targetX = mouseX - this.width / 2;
             targetY = mouseY - this.height / 2;
             isMoving = true;
+            moveDirX = targetX - this.x;
         } else {
             if (keys['ArrowUp']) { targetY = this.y - this.speed; isMoving = true; }
             if (keys['ArrowDown']) { targetY = this.y + this.speed; isMoving = true; }
-            if (keys['ArrowLeft']) { targetX = this.x - this.speed; isMoving = true; }
-            if (keys['ArrowRight']) { targetX = this.x + this.speed; isMoving = true; }
+            if (keys['ArrowLeft']) { targetX = this.x - this.speed; isMoving = true; moveDirX = -1; }
+            if (keys['ArrowRight']) { targetX = this.x + this.speed; isMoving = true; moveDirX = 1; }
         }
 
         const currentSpeed = Date.now() < this.speedBoostUntil
@@ -61,11 +70,16 @@ const Player = {
                 const moveSpeed = Math.min(currentSpeed * 1.2, dist);
                 this.x += (dx / dist) * moveSpeed;
                 this.y += (dy / dist) * moveSpeed;
+                moveDirX = dx;
             }
         } else {
             this.x = targetX;
             this.y = targetY;
         }
+
+        // 倾斜动画
+        const targetTilt = moveDirX > 2 ? 15 : moveDirX < -2 ? -15 : 0;
+        this.tiltAngle += (targetTilt - this.tiltAngle) * 0.15;
 
         this.clampPosition();
     },
@@ -89,6 +103,7 @@ const Player = {
         this.lives--;
         this.invincibleUntil = Date.now() + PLAYER_INVINCIBLE_MS;
         this.weaponLevel = Math.max(1, this.weaponLevel - 2);
+        this.hitFlash = 0.8;
 
         EffectSystem.createExplosion(
             this.x + this.width / 2,

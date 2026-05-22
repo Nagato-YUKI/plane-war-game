@@ -21,5 +21,22 @@ const EffectRenderer = {
             ctx.fill();
         }
         ctx.globalAlpha = 1;
+    },
+
+    drawBulletHitEffects(ctx) {
+        const effects = EffectSystem.getBulletHitEffects();
+        for (const e of effects) {
+            const alpha = e.life / e.maxLife;
+            ctx.globalAlpha = alpha;
+            ctx.strokeStyle = e.color;
+            ctx.lineWidth = 2;
+            ctx.shadowColor = e.color;
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+        ctx.globalAlpha = 1;
     }
 };

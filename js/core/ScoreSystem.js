@@ -25,7 +25,8 @@ const ScoreSystem = {
 
     addScore(value, x, y, difficulty) {
         const mult = this.getComboMultiplier();
-        const finalValue = Math.floor(value * mult * DIFFICULTY[difficulty].scoreMult);
+        const diff = DIFFICULTY[difficulty] || DIFFICULTY.NORMAL;
+        const finalValue = Math.floor(value * mult * diff.scoreMult);
         this.score += finalValue;
 
         if (x !== undefined && y !== undefined) {

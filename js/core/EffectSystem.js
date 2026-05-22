@@ -2,10 +2,12 @@ const EffectSystem = {
     particles: [],
     screenShake: { x: 0, y: 0, intensity: 0 },
     engineParticles: [],
+    bulletHitEffects: [],
 
     init() {
         this.particles = [];
         this.engineParticles = [];
+        this.bulletHitEffects = [];
         this.screenShake = { x: 0, y: 0, intensity: 0 };
     },
 
@@ -27,16 +29,67 @@ const EffectSystem = {
     },
 
     createExplosion(x, y, color1, color2, count) {
+        // 核心爆炸 - 快速扩散
         for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 5 + 2;
+            this.createParticle(
+                x, y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                Math.random() > 0.5 ? color1 : color2,
+                Math.random() * 25 + 15,
+                Math.random() * 4 + 2
+            );
+        }
+
+        // 火花 - 小颗粒高速
+        for (let i = 0; i < count * 0.5; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 8 + 4;
+            this.createParticle(
+                x, y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                '#ffffff',
+                Math.random() * 10 + 5,
+                Math.random() * 2 + 0.5
+            );
+        }
+
+        // 烟雾 - 大颗粒慢速
+        for (let i = 0; i < count * 0.3; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 1.5 + 0.5;
+            this.createParticle(
+                x, y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed - 1,
+                '#888888',
+                Math.random() * 40 + 20,
+                Math.random() * 6 + 3
+            );
+        }
+    },
+
+    createBulletHit(x, y, color) {
+        this.bulletHitEffects.push({
+            x, y, color,
+            life: 10,
+            maxLife: 10,
+            size: 8
+        });
+
+        for (let i = 0; i < 5; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = Math.random() * 3 + 1;
             this.createParticle(
                 x, y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed,
-                Math.random() > 0.5 ? color1 : color2,
-                Math.random() * 30 + 10,
-                Math.random() * 3 + 1
+                color,
+                10,
+                Math.random() * 2 + 1
             );
         }
     },
@@ -73,6 +126,7 @@ const EffectSystem = {
     update() {
         this.updateParticles();
         this.updateEngineParticles();
+        this.updateBulletHitEffects();
         this.updateScreenShake();
     },
 
@@ -82,8 +136,8 @@ const EffectSystem = {
             p.x += p.vx;
             p.y += p.vy;
             p.life--;
-            p.vx *= 0.98;
-            p.vy *= 0.98;
+            p.vx *= 0.96;
+            p.vy *= 0.96;
             p.alpha = p.life / p.maxLife;
             if (p.life <= 0) this.particles.splice(i, 1);
         }
@@ -100,6 +154,15 @@ const EffectSystem = {
         }
     },
 
+    updateBulletHitEffects() {
+        for (let i = this.bulletHitEffects.length - 1; i >= 0; i--) {
+            const e = this.bulletHitEffects[i];
+            e.life--;
+            e.size += 1;
+            if (e.life <= 0) this.bulletHitEffects.splice(i, 1);
+        }
+    },
+
     getScreenShake() {
         return this.screenShake;
     },
@@ -110,5 +173,9 @@ const EffectSystem = {
 
     getEngineParticles() {
         return this.engineParticles;
+    },
+
+    getBulletHitEffects() {
+        return this.bulletHitEffects;
     }
 };

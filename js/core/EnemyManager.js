@@ -15,11 +15,11 @@ const EnemyManager = {
         if (this.bossActive) return;
 
         const diff = DIFFICULTY[difficulty];
-        const maxEnemies = Math.min(Math.floor(diff.enemyCount + waveNumber * 2), 30);
+        const maxEnemies = Math.min(Math.floor(diff.enemyCount + waveNumber * 2), 40);
         if (this.enemies.length >= maxEnemies) return;
 
         const now = Date.now();
-        const spawnInterval = Math.max(150, 600 - waveNumber * 30);
+        const spawnInterval = Math.max(100, 500 - waveNumber * 25);
         if (now - this.lastSpawnTime < spawnInterval) return;
         this.lastSpawnTime = now;
 
@@ -29,7 +29,7 @@ const EnemyManager = {
             return;
         }
 
-        if (Math.random() < 0.3 && waveNumber >= 2) {
+        if (Math.random() < 0.4 && waveNumber >= 2) {
             this.spawnFormation(difficulty, waveNumber);
         } else {
             this.spawnSingle(difficulty, waveNumber);
@@ -58,7 +58,9 @@ const EnemyManager = {
             lastShootTime: 0,
             shootPattern: 0,
             entryAnimation: true,
-            entryProgress: 0
+            entryProgress: 0,
+            hitFlash: 0,
+            isShooting: false
         });
     },
 
@@ -66,7 +68,7 @@ const EnemyManager = {
         const types = ['drone', 'fighter', 'elite'];
         const type = types[Math.floor(Math.random() * Math.min(types.length, waveNumber))];
         const typeDef = ENEMY_TYPES[type];
-        const count = Math.min(3 + Math.floor(waveNumber / 2), 8);
+        const count = Math.min(3 + Math.floor(waveNumber / 2), 10);
         const startX = Math.random() * (CANVAS_WIDTH - count * typeDef.width);
 
         for (let i = 0; i < count; i++) {
@@ -84,6 +86,8 @@ const EnemyManager = {
                 shootPattern: 0,
                 entryAnimation: true,
                 entryProgress: 0,
+                hitFlash: 0,
+                isShooting: false,
                 formationIndex: i,
                 formationCount: count
             });
@@ -114,7 +118,9 @@ const EnemyManager = {
             hoverX: CANVAS_WIDTH / 2,
             phase: 1,
             entryAnimation: true,
-            entryProgress: 0
+            entryProgress: 0,
+            hitFlash: 0,
+            isShooting: false
         });
     },
 
@@ -127,6 +133,16 @@ const EnemyManager = {
                 if (enemy.entryProgress >= 1) {
                     enemy.entryAnimation = false;
                 }
+            }
+
+            // 更新击中闪烁
+            if (enemy.hitFlash > 0) {
+                enemy.hitFlash -= 0.05;
+            }
+
+            // 更新射击标记
+            if (enemy.isShooting) {
+                enemy.isShooting = false;
             }
 
             if (enemy.type === 'boss') {
@@ -175,32 +191,47 @@ const EnemyManager = {
             if (!enemy.canShoot) continue;
 
             if (enemy.type === 'boss') {
-                this.tryBossShoot(enemy, player, diff, now);
+                this.tryBossShoot(enemy, player, diff, now, difficulty);
             } else {
-                this.tryEnemyShoot(enemy, player, diff, now);
+                this.tryEnemyShoot(enemy, player, diff, now, difficulty);
             }
         }
     },
 
-    tryEnemyShoot(enemy, player, diff, now) {
+    tryEnemyShoot(enemy, player, diff, now, difficulty) {
         const typeDef = ENEMY_TYPES[enemy.type];
         if (now - enemy.lastShootTime < typeDef.shootInterval / diff.density) return;
         enemy.lastShootTime = now;
-        BulletSystem.fireEnemyBullet(enemy, player, diff.name);
+        enemy.isShooting = true;
+        BulletSystem.fireEnemyBullet(enemy, player, difficulty);
     },
 
-    tryBossShoot(boss, player, diff, now) {
+    tryBossShoot(boss, player, diff, now, difficulty) {
         const patterns = BulletSystem.getBossPatterns(boss.bossType, boss.phase, diff);
         const pat = patterns[boss.patternIndex];
 
-        if (now - boss.patternSwitchTime > 6000) {
+        if (now - boss.patternSwitchTime > 5000) {
             boss.patternIndex = (boss.patternIndex + 1) % patterns.length;
             boss.patternSwitchTime = now;
         }
 
         if (!pat || now - boss.lastShootTime < pat.interval) return;
         boss.lastShootTime = now;
-        BulletSystem.fireBossBullet(boss, player, diff.name);
+        boss.isShooting = true;
+        BulletSystem.fireBossBullet(boss, player, difficulty);
+    },
+
+    damageEnemy(index, damage) {
+        const enemy = this.enemies[index];
+        if (!enemy) return false;
+
+        enemy.hp -= damage;
+        enemy.hitFlash = 0.5;
+
+        if (enemy.hp <= 0) {
+            return true;
+        }
+        return false;
     },
 
     removeEnemy(index) {

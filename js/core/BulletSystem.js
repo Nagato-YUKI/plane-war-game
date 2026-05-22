@@ -15,6 +15,8 @@ const BulletSystem = {
 
         if (now - player.lastBulletTime < interval) return;
         player.lastBulletTime = now;
+        player.isShooting = true;
+        setTimeout(() => { player.isShooting = false; }, 100);
 
         if (player.weapon === 'laser') {
             this.playerBullets.push({
@@ -67,27 +69,44 @@ const BulletSystem = {
         const s = DIFFICULTY[difficulty].bulletSpeed;
 
         if (enemy.type === 'drone') {
+            // 追踪弹幕
             const angle = MathUtils.angleTo(cx, cy, player.getCenterX(), player.getCenterY());
             this.enemyBullets.push({
                 x: cx, y: cy,
-                width: 5, height: 8,
-                vx: Math.cos(angle) * typeDef.bulletSpeed * s * 0.5,
+                width: 6, height: 6,
+                vx: Math.cos(angle) * typeDef.bulletSpeed * s * 0.6,
                 vy: Math.sin(angle) * typeDef.bulletSpeed * s,
-                color: '#ff4444', grazed: false, trail: []
+                color: '#ff4444', grazed: false, trail: [],
+                shape: 'circle'
             });
         } else if (enemy.type === 'fighter') {
+            // 扇形弹幕 3发
             for (let i = -1; i <= 1; i++) {
-                const angle = Math.PI / 2 + i * 0.3;
+                const angle = Math.PI / 2 + i * 0.4;
                 this.enemyBullets.push({
                     x: cx, y: cy,
-                    width: 5, height: 8,
+                    width: 6, height: 6,
                     vx: Math.cos(angle) * typeDef.bulletSpeed * s,
                     vy: Math.sin(angle) * typeDef.bulletSpeed * s,
-                    color: '#ff8844', grazed: false, trail: []
+                    color: '#ff8844', grazed: false, trail: [],
+                    shape: 'diamond'
+                });
+            }
+            // 额外追踪弹
+            if (Math.random() < 0.3) {
+                const angle = MathUtils.angleTo(cx, cy, player.getCenterX(), player.getCenterY());
+                this.enemyBullets.push({
+                    x: cx, y: cy,
+                    width: 5, height: 5,
+                    vx: Math.cos(angle) * typeDef.bulletSpeed * s * 1.2,
+                    vy: Math.sin(angle) * typeDef.bulletSpeed * s * 1.2,
+                    color: '#ff6644', grazed: false, trail: [],
+                    shape: 'circle'
                 });
             }
         } else if (enemy.type === 'bomber') {
-            const count = typeDef.bulletCount;
+            // 环形弹幕 16发
+            const count = 16;
             for (let i = 0; i < count; i++) {
                 const angle = (i / count) * Math.PI * 2;
                 this.enemyBullets.push({
@@ -95,21 +114,47 @@ const BulletSystem = {
                     width: 6, height: 6,
                     vx: Math.cos(angle) * typeDef.bulletSpeed * s,
                     vy: Math.sin(angle) * typeDef.bulletSpeed * s,
-                    color: '#ff66ff', grazed: false, trail: []
+                    color: '#ff66ff', grazed: false, trail: [],
+                    shape: 'square'
                 });
             }
-        } else if (enemy.type === 'elite') {
-            const angle = MathUtils.angleTo(cx, cy, player.getCenterX(), player.getCenterY());
-            for (let i = 0; i < 3; i++) {
-                const speed = typeDef.bulletSpeed * s * (0.8 + i * 0.2);
+            // 额外随机弹
+            for (let i = 0; i < 4; i++) {
+                const angle = Math.random() * Math.PI * 2;
                 this.enemyBullets.push({
                     x: cx, y: cy,
                     width: 5, height: 5,
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed,
-                    color: '#ff44ff', grazed: false, trail: []
+                    vx: Math.cos(angle) * typeDef.bulletSpeed * s * 0.8,
+                    vy: Math.sin(angle) * typeDef.bulletSpeed * s * 0.8,
+                    color: '#ff44ff', grazed: false, trail: [],
+                    shape: 'circle'
                 });
             }
+        } else if (enemy.type === 'elite') {
+            // 螺旋弹幕
+            const time = Date.now() / 1000;
+            const baseAngle = time * 2;
+            for (let i = 0; i < 5; i++) {
+                const angle = baseAngle + (i / 5) * Math.PI * 2;
+                this.enemyBullets.push({
+                    x: cx, y: cy,
+                    width: 6, height: 6,
+                    vx: Math.cos(angle) * typeDef.bulletSpeed * s,
+                    vy: Math.sin(angle) * typeDef.bulletSpeed * s,
+                    color: '#ff44ff', grazed: false, trail: [],
+                    shape: 'star'
+                });
+            }
+            // 追踪弹
+            const angle = MathUtils.angleTo(cx, cy, player.getCenterX(), player.getCenterY());
+            this.enemyBullets.push({
+                x: cx, y: cy,
+                width: 7, height: 7,
+                vx: Math.cos(angle) * typeDef.bulletSpeed * s * 0.9,
+                vy: Math.sin(angle) * typeDef.bulletSpeed * s * 0.9,
+                color: '#ff22ff', grazed: false, trail: [],
+                shape: 'diamond'
+            });
         }
     },
 
@@ -141,7 +186,8 @@ const BulletSystem = {
                 vy: Math.sin(angle) * pat.speed,
                 color: pat.color || '#ff0044',
                 grazed: false,
-                trail: []
+                trail: [],
+                shape: pat.shape || 'circle'
             });
         }
     },
@@ -152,47 +198,55 @@ const BulletSystem = {
 
         if (bossType === 'mech') {
             const patterns = [
-                { count: Math.floor(8 * d), speed: 3 * s, interval: 2000, aimPlayer: false, baseAngle: 0, width: 6, height: 6, color: '#ff4444' },
-                { count: Math.floor(3 * d), speed: 5 * s, interval: 1500, aimPlayer: true, width: 6, height: 6, color: '#ff8844' },
-                { count: Math.floor(6 * d), speed: 4 * s, interval: 1800, aimPlayer: false, baseAngle: Math.PI / 4, width: 6, height: 6, color: '#ff4444' }
+                { count: Math.floor(12 * d), speed: 3 * s, interval: 1500, aimPlayer: false, baseAngle: 0, width: 6, height: 6, color: '#ff4444', shape: 'circle' },
+                { count: Math.floor(5 * d), speed: 5 * s, interval: 1200, aimPlayer: true, width: 6, height: 6, color: '#ff8844', shape: 'diamond' },
+                { count: Math.floor(8 * d), speed: 3.5 * s, interval: 1400, aimPlayer: false, baseAngle: Math.PI / 4, width: 6, height: 6, color: '#ff4444', shape: 'square' }
             ];
 
             if (phase >= 2) {
-                patterns[0].count = Math.floor(12 * d);
+                patterns[0].count = Math.floor(18 * d);
                 patterns[0].speed = 3.5 * s;
-                patterns[1].count = Math.floor(5 * d);
+                patterns[1].count = Math.floor(8 * d);
                 patterns[1].spread = Math.PI / 6;
+                patterns.push({ count: Math.floor(6 * d), speed: 4 * s, interval: 1000, aimPlayer: true, width: 8, height: 8, color: '#ff6644', shape: 'star' });
             }
             if (phase >= 3) {
-                patterns[0].count = Math.floor(16 * d);
+                patterns[0].count = Math.floor(24 * d);
                 patterns[0].speed = 4 * s;
-                patterns[2].count = Math.floor(10 * d);
+                patterns[2].count = Math.floor(14 * d);
+                patterns.push({ count: Math.floor(20 * d), speed: 2.5 * s, interval: 800, aimPlayer: false, baseAngle: 0, width: 5, height: 5, color: '#ff2244', shape: 'circle' });
             }
             if (phase >= 4) {
-                patterns[0].count = Math.floor(24 * d);
-                patterns[0].speed = 5 * s;
-                patterns[1].count = Math.floor(8 * d);
-                patterns[1].speed = 7 * s;
+                patterns[0].count = Math.floor(36 * d);
+                patterns[0].speed = 4.5 * s;
+                patterns[1].count = Math.floor(12 * d);
+                patterns[1].speed = 6 * s;
+                patterns.push({ count: Math.floor(16 * d), speed: 3 * s, interval: 600, aimPlayer: false, baseAngle: Math.PI / 8, width: 6, height: 6, color: '#ff0044', shape: 'diamond' });
             }
             return patterns;
         } else {
             const patterns = [
-                { count: Math.floor(6 * d), speed: 3 * s, interval: 2000, aimPlayer: false, baseAngle: 0, width: 6, height: 6, color: '#44ff44' },
-                { count: Math.floor(3 * d), speed: 4 * s, interval: 2500, aimPlayer: true, width: 6, height: 6, color: '#88ff44' },
-                { count: Math.floor(6 * d), speed: 3.5 * s, interval: 1800, aimPlayer: false, baseAngle: Math.PI / 4, width: 6, height: 6, color: '#44ff44' }
+                { count: Math.floor(10 * d), speed: 3 * s, interval: 1500, aimPlayer: false, baseAngle: 0, width: 6, height: 6, color: '#44ff44', shape: 'circle' },
+                { count: Math.floor(4 * d), speed: 4 * s, interval: 2000, aimPlayer: true, width: 6, height: 6, color: '#88ff44', shape: 'diamond' },
+                { count: Math.floor(8 * d), speed: 3.5 * s, interval: 1400, aimPlayer: false, baseAngle: Math.PI / 4, width: 6, height: 6, color: '#44ff44', shape: 'square' }
             ];
 
             if (phase >= 2) {
-                patterns[0].count = Math.floor(10 * d);
+                patterns[0].count = Math.floor(16 * d);
                 patterns[0].speed = 3.5 * s;
+                patterns.push({ count: Math.floor(8 * d), speed: 3 * s, interval: 1000, aimPlayer: false, baseAngle: 0, width: 5, height: 5, color: '#66ff66', shape: 'star' });
             }
             if (phase >= 3) {
-                patterns[0].count = Math.floor(16 * d);
+                patterns[0].count = Math.floor(24 * d);
                 patterns[0].speed = 4 * s;
+                patterns.push({ count: Math.floor(12 * d), speed: 2.5 * s, interval: 800, aimPlayer: true, width: 7, height: 7, color: '#22ff22', shape: 'diamond' });
             }
             if (phase >= 4) {
-                patterns[0].count = Math.floor(24 * d);
-                patterns[0].speed = 5 * s;
+                patterns[0].count = Math.floor(36 * d);
+                patterns[0].speed = 4.5 * s;
+                patterns[1].count = Math.floor(10 * d);
+                patterns[1].speed = 5.5 * s;
+                patterns.push({ count: Math.floor(20 * d), speed: 2 * s, interval: 600, aimPlayer: false, baseAngle: Math.PI / 6, width: 5, height: 5, color: '#00ff44', shape: 'circle' });
             }
             return patterns;
         }
@@ -256,7 +310,7 @@ const BulletSystem = {
 
             if (!b.trail) b.trail = [];
             b.trail.push({ x: b.x, y: b.y });
-            if (b.trail.length > 8) b.trail.shift();
+            if (b.trail.length > 12) b.trail.shift();
 
             if (b.y > CANVAS_HEIGHT + 20 || b.x < -20 || b.x > CANVAS_WIDTH + 20 || b.y < -20) {
                 this.enemyBullets.splice(i, 1);

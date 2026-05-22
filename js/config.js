@@ -29,10 +29,10 @@ const GAME_STATE = {
 };
 
 const DIFFICULTY = {
-    EASY: { name: '简单', hpMult: 0.7, bulletSpeed: 0.8, density: 0.6, scoreMult: 0.8, enemyCount: 8 },
-    NORMAL: { name: '普通', hpMult: 1.0, bulletSpeed: 1.0, density: 1.0, scoreMult: 1.0, enemyCount: 12 },
-    HARD: { name: '困难', hpMult: 1.3, bulletSpeed: 1.2, density: 1.5, scoreMult: 1.5, enemyCount: 18 },
-    LUNATIC: { name: '疯狂', hpMult: 1.6, bulletSpeed: 1.4, density: 2.0, scoreMult: 2.0, enemyCount: 25 }
+    EASY: { name: '简单', hpMult: 0.7, bulletSpeed: 0.8, density: 0.6, scoreMult: 0.8, enemyCount: 12 },
+    NORMAL: { name: '普通', hpMult: 1.0, bulletSpeed: 1.0, density: 1.0, scoreMult: 1.0, enemyCount: 18 },
+    HARD: { name: '困难', hpMult: 1.3, bulletSpeed: 1.2, density: 1.5, scoreMult: 1.5, enemyCount: 25 },
+    LUNATIC: { name: '疯狂', hpMult: 1.6, bulletSpeed: 1.4, density: 2.0, scoreMult: 2.0, enemyCount: 35 }
 };
 
 const SKINS = {

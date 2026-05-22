@@ -122,6 +122,7 @@ const UIRenderer = {
         const spacing = 80;
         const totalWidth = unlocked.length * spacing;
         const startX = (CANVAS_WIDTH - totalWidth) / 2 + spacing / 2;
+        const currentSkin = GameEngine ? GameEngine.getSelectedSkin() : 'default';
 
         ctx.fillStyle = '#ffffff';
         ctx.font = '14px monospace';
@@ -132,7 +133,7 @@ const UIRenderer = {
             const skinId = unlocked[i];
             const skin = SKINS[skinId];
             const x = startX + i * spacing;
-            const isSelected = skinId === selectedSkin;
+            const isSelected = skinId === currentSkin;
 
             if (isSelected) {
                 ctx.strokeStyle = '#00ff00';
@@ -140,12 +141,11 @@ const UIRenderer = {
                 ctx.strokeRect(x - 24, y - 10, 48, 48);
             }
 
-            const asset = getAsset(`player_${skinId}`);
-            if (asset) {
-                ctx.globalAlpha = skin.opacity || 1;
-                ctx.drawImage(asset, x - 20, y - 6, 40, 44);
-                ctx.globalAlpha = 1;
-            }
+            // 绘制矢量飞机预览
+            ctx.save();
+            ctx.translate(x, y + 16);
+            this.drawSkinPreview(ctx, skin);
+            ctx.restore();
 
             ctx.fillStyle = isSelected ? '#00ff00' : '#aaaaaa';
             ctx.font = '10px monospace';
@@ -162,6 +162,7 @@ const UIRenderer = {
         const spacing = 90;
         const totalWidth = unlocked.length * spacing;
         const startX = (CANVAS_WIDTH - totalWidth) / 2 + spacing / 2;
+        const currentWeapon = GameEngine ? GameEngine.getSelectedWeapon() : 'vulcan';
 
         ctx.fillStyle = '#ffffff';
         ctx.font = '14px monospace';
@@ -172,7 +173,7 @@ const UIRenderer = {
             const wpnId = unlocked[i];
             const wpn = WEAPONS[wpnId];
             const x = startX + i * spacing;
-            const isSelected = wpnId === selectedWeapon;
+            const isSelected = wpnId === currentWeapon;
 
             if (isSelected) {
                 ctx.strokeStyle = '#00ff00';
@@ -185,6 +186,53 @@ const UIRenderer = {
             ctx.textAlign = 'center';
             ctx.fillText(wpn.name, x, y + 10);
         }
+    },
+
+    drawSkinPreview(ctx, skin) {
+        const w = 36;
+        const h = 40;
+        const c = skin.colors;
+
+        ctx.globalAlpha = skin.opacity || 1;
+
+        // 主体机翼
+        ctx.fillStyle = c.primary;
+        ctx.beginPath();
+        ctx.moveTo(0, -h / 2 + 2);
+        ctx.lineTo(-w / 2 + 2, h / 2 - 8);
+        ctx.lineTo(-w / 2 + 6, h / 2 - 2);
+        ctx.lineTo(-w / 4, h / 2 - 6);
+        ctx.lineTo(0, h / 2 - 10);
+        ctx.lineTo(w / 4, h / 2 - 6);
+        ctx.lineTo(w / 2 - 6, h / 2 - 2);
+        ctx.lineTo(w / 2 - 2, h / 2 - 8);
+        ctx.closePath();
+        ctx.fill();
+
+        // 机身
+        ctx.fillStyle = c.secondary;
+        ctx.beginPath();
+        ctx.moveTo(0, -h / 2 + 8);
+        ctx.lineTo(-w / 6, h / 2 - 12);
+        ctx.lineTo(w / 6, h / 2 - 12);
+        ctx.closePath();
+        ctx.fill();
+
+        // 驾驶舱
+        ctx.fillStyle = c.core;
+        ctx.beginPath();
+        ctx.ellipse(0, -h / 2 + 14, w / 10, h / 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 外发光
+        ctx.shadowColor = c.glow;
+        ctx.shadowBlur = 6;
+        ctx.strokeStyle = c.glow;
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = 0.5;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
     },
 
     drawGameOverScreen(ctx) {

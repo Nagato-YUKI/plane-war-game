@@ -135,8 +135,8 @@ const GameEngine = {
         const laserX = bullet.x - bullet.width / 2;
         const laserRight = bullet.x + bullet.width / 2;
         if (laserRight > enemy.x && laserX < enemy.x + enemy.width && bullet.y > enemy.y) {
-            enemy.hp -= bullet.damage || 2;
-            if (enemy.hp <= 0) this.destroyEnemy(enemyIndex);
+            const isDead = EnemyManager.damageEnemy(enemyIndex, bullet.damage || 2);
+            if (isDead) this.destroyEnemy(enemyIndex);
         }
     },
 
@@ -149,9 +149,9 @@ const GameEngine = {
         };
 
         if (CollisionUtils.checkCollision(bulletRect, BULLET_HITBOX_RATIO, enemy, ENEMY_HITBOX_RATIO)) {
-            enemy.hp -= bullet.damage || 1;
+            const isDead = EnemyManager.damageEnemy(enemyIndex, bullet.damage || 1);
             BulletSystem.getPlayerBullets().splice(bulletIndex, 1);
-            if (enemy.hp <= 0) this.destroyEnemy(enemyIndex);
+            if (isDead) this.destroyEnemy(enemyIndex);
             return true;
         }
         return false;
