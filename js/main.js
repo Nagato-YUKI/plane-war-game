@@ -1,4 +1,7 @@
 const InputHandler = {
+    _inputActive: false,
+    _inputBuffer: '',
+
     init() {
         window.addEventListener('keydown', this.handleKeyDown.bind(this));
         window.addEventListener('keyup', this.handleKeyUp.bind(this));
@@ -11,10 +14,58 @@ const InputHandler = {
         Renderer.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
     },
 
+    isInputActive() {
+        return this._inputActive;
+    },
+
     handleKeyDown(event) {
+        if (event.code === 'Tab') {
+            event.preventDefault();
+            if (GameEngine.getState() === GAME_STATE.START) {
+                UIRenderer._showLeaderboard = !UIRenderer._showLeaderboard;
+            }
+            return;
+        }
+
+        if (this._inputActive && GameEngine.getState() === GAME_STATE.START) {
+            event.preventDefault();
+            if (event.code === 'Enter') {
+                if (this._inputBuffer.length > 0) {
+                    LeaderboardSystem.setPlayerId(this._inputBuffer);
+                }
+                this._inputActive = false;
+                this._inputBuffer = '';
+                return;
+            }
+            if (event.code === 'Escape') {
+                this._inputActive = false;
+                this._inputBuffer = '';
+                return;
+            }
+            if (event.code === 'Backspace') {
+                this._inputBuffer = this._inputBuffer.slice(0, -1);
+                return;
+            }
+            if (event.key.length === 1 && this._inputBuffer.length < 8) {
+                this._inputBuffer += event.key;
+                return;
+            }
+            return;
+        }
+
         if (event.code === 'Space') {
             event.preventDefault();
             if (GameEngine.getState() === GAME_STATE.START) {
+                if (UIRenderer._showLeaderboard) {
+                    UIRenderer._showLeaderboard = false;
+                    return;
+                }
+                const playerId = LeaderboardSystem.getPlayerId();
+                if (!playerId) {
+                    this._inputActive = true;
+                    this._inputBuffer = '';
+                    return;
+                }
                 GameEngine.start();
             } else if (GameEngine.getState() === GAME_STATE.GAME_OVER) {
                 GameEngine.init();
@@ -79,20 +130,38 @@ const InputHandler = {
 
     handleCanvasClick(event) {
         if (GameEngine.getState() !== GAME_STATE.START) return;
+        if (UIRenderer._showLeaderboard) return;
+
         const rect = Renderer.canvas.getBoundingClientRect();
         const scaleX = CANVAS_WIDTH / rect.width;
         const scaleY = CANVAS_HEIGHT / rect.height;
         const clickX = (event.clientX - rect.left) * scaleX;
         const clickY = (event.clientY - rect.top) * scaleY;
 
+        if (this.checkPlayerIdClick(clickX, clickY)) return;
         this.checkDifficultyClick(clickX, clickY);
         this.checkSkinSelectionClick(clickX, clickY);
         this.checkWeaponSelectionClick(clickX, clickY);
     },
 
+    checkPlayerIdClick(clickX, clickY) {
+        const cx = CANVAS_WIDTH / 2;
+        const y = 148;
+        const boxW = 160;
+        const boxH = 24;
+        const boxX = cx - boxW / 2;
+
+        if (clickX >= boxX && clickX <= boxX + boxW && clickY >= y - 2 && clickY <= y + boxH) {
+            this._inputActive = true;
+            this._inputBuffer = LeaderboardSystem.getPlayerId();
+            return true;
+        }
+        return false;
+    },
+
     checkDifficultyClick(clickX, clickY) {
         const cx = CANVAS_WIDTH / 2;
-        const y = 172;
+        const y = 206;
         const keys = Object.keys(DIFFICULTY);
         const spacing = 90;
 
@@ -107,7 +176,7 @@ const InputHandler = {
 
     checkSkinSelectionClick(clickX, clickY) {
         const unlocked = getUnlockedSkins();
-        const y = 230;
+        const y = 256;
         const spacing = 75;
         const totalWidth = unlocked.length * spacing;
         const startX = (CANVAS_WIDTH - totalWidth) / 2 + spacing / 2;
@@ -123,7 +192,7 @@ const InputHandler = {
 
     checkWeaponSelectionClick(clickX, clickY) {
         const unlocked = getUnlockedWeapons();
-        const y = 316;
+        const y = 340;
         const spacing = 120;
         const totalWidth = unlocked.length * spacing;
         const startX = (CANVAS_WIDTH - totalWidth) / 2 + spacing / 2;

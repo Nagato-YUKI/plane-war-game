@@ -1,55 +1,10 @@
-const ASSET_URLS = {
-    player_default: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=futuristic+blue+fighter+jet+top-down+view+glowing+cyan+thrusters+sleek+aerodynamic+design+sci-fi+aircraft+neon+glow+energy+wings+transparent+cockpit+detailed+metallic+texture+8k+quality+game+asset&image_size=square',
-    player_flame: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=futuristic+red+fighter+jet+with+flame+trails+top-down+view+glowing+orange+thrusters+aggressive+sharp+wings+sci-fi+combat+aircraft+fire+aura+burning+edges+detailed+metallic+texture+8k+quality+game+asset&image_size=square',
-    player_ice: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=futuristic+ice-themed+fighter+jet+top-down+view+cyan+white+gradient+crystal-like+wings+frozen+particle+effects+sci-fi+aircraft+frost+aura+glacial+armor+detailed+metallic+texture+8k+quality+game+asset&image_size=square',
-    player_shadow: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=futuristic+dark+purple+stealth+fighter+top-down+view+shadow+particle+effects+mysterious+dark+aura+sci-fi+combat+aircraft+phantom+wings+void+energy+detailed+metallic+texture+8k+quality+game+asset&image_size=square',
-    player_holy: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=futuristic+golden+angel+fighter+jet+top-down+view+holy+light+halo+white+angelic+wings+divine+particle+effects+sci-fi+aircraft+celestial+armor+glowing+runes+detailed+metallic+texture+8k+quality+game+asset&image_size=square',
-    enemy_drone: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=small+red+enemy+drone+top-down+view+triangular+shape+glowing+red+core+sci-fi+enemy+aircraft+mechanical+details+antenna+sensors+aggressive+design+8k+quality+game+asset&image_size=square',
-    enemy_fighter: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=medium+orange+enemy+fighter+top-down+view+armored+plating+multiple+gun+turrets+sci-fi+combat+drone+heavy+armor+cannon+ports+detailed+mechanical+8k+quality+game+asset&image_size=square',
-    enemy_bomber: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=heavy+green+enemy+bomber+top-down+view+large+bulky+design+multiple+cannons+sci-fi+battleship+bomb+bay+heavy+armor+fortress+like+8k+quality+game+asset&image_size=square',
-    enemy_elite: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=elite+purple+enemy+ace+fighter+top-down+view+sleek+fast+design+energy+weapons+sci-fi+advanced+drone+royal+armor+glowing+edges+8k+quality+game+asset&image_size=square',
-    boss_mech: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=massive+mechanical+flying+fortress+boss+top-down+view+giant+armored+body+multiple+weapon+systems+glowing+red+eye+sci-fi+boss+mechanical+tentacles+heavy+cannons+devastating+8k+quality+game+asset&image_size=square',
-    boss_bio: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=bio-mechanical+alien+mothership+boss+top-down+view+organic+tentacles+glowing+green+biological+weapons+sci-fi+horror+boss+alien+carapace+acid+sacs+8k+quality+game+asset&image_size=square',
-    bullet_player: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=glowing+cyan+energy+projectile+top-down+view+elongated+oval+bright+core+light+trail+sci-fi+bullet+plasma+effect+transparent+background+8k+quality+game+asset&image_size=square',
-    bullet_enemy: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=glowing+red+energy+projectile+top-down+view+elongated+oval+bright+core+light+trail+sci-fi+bullet+plasma+effect+dangerous+look+8k+quality+game+asset&image_size=square',
-    item_powerup: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=glowing+green+power+up+orb+top-down+view+energy+sphere+pulsing+light+particle+effects+sci-fi+item+collectible+8k+quality+game+asset&image_size=square',
-    item_weapon: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=glowing+purple+weapon+upgrade+orb+top-down+view+energy+sphere+cross+symbol+particle+effects+sci-fi+item+collectible+8k+quality+game+asset&image_size=square',
-    explosion: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=explosion+effect+top-down+view+fire+ball+smoke+debris+particle+burst+orange+yellow+red+energy+detailed+8k+quality+game+asset&image_size=square'
-};
-
 const ASSET_CACHE = {};
-const ASSET_LOAD_PROMISES = {};
 
-function loadImage(url) {
-    if (ASSET_LOAD_PROMISES[url]) return ASSET_LOAD_PROMISES[url];
-
-    ASSET_LOAD_PROMISES[url] = new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-            ASSET_CACHE[url] = img;
-            resolve(img);
-        };
-        img.onerror = () => {
-            console.warn(`Failed to load image: ${url}`);
-            resolve(null);
-        };
-        img.src = url;
-    });
-
-    return ASSET_LOAD_PROMISES[url];
+function getAsset() {
+    return null;
 }
 
-function getAsset(key) {
-    const url = ASSET_URLS[key];
-    if (!url) return null;
-    return ASSET_CACHE[url] || null;
-}
-
-async function preloadAssets() {
-    const promises = Object.values(ASSET_URLS).map(url => loadImage(url));
-    await Promise.all(promises);
-    console.log('Assets preloaded');
+function preloadAssets() {
 }
 
 function createFallbackSprite(width, height, drawFn) {
@@ -62,9 +17,6 @@ function createFallbackSprite(width, height, drawFn) {
 }
 
 function getPlayerSprite(skinId) {
-    const asset = getAsset(`player_${skinId}`);
-    if (asset) return asset;
-
     const skin = SKINS[skinId] || SKINS.default;
     return createFallbackSprite(64, 64, (ctx, w, h) => {
         const cx = w / 2;
@@ -108,9 +60,6 @@ function getPlayerSprite(skinId) {
 }
 
 function getEnemySprite(type) {
-    const asset = getAsset(`enemy_${type}`);
-    if (asset) return asset;
-
     const typeDef = ENEMY_TYPES[type];
     if (!typeDef) return null;
 
@@ -165,9 +114,6 @@ function getEnemySprite(type) {
 }
 
 function getBossSprite(type) {
-    const asset = getAsset(`boss_${type}`);
-    if (asset) return asset;
-
     const typeDef = BOSS_TYPES[type];
     if (!typeDef) return null;
 
@@ -212,19 +158,10 @@ function getBossSprite(type) {
     });
 }
 
-function getBulletSprite(isPlayer) {
-    const key = isPlayer ? 'bullet_player' : 'bullet_enemy';
-    const asset = getAsset(key);
-    if (asset) return asset;
+function getBulletSprite() {
     return null;
 }
 
-function getItemSprite(itemType) {
-    const key = itemType === 'powerUp' ? 'item_powerup' :
-        itemType === 'weaponSwitch' ? 'item_weapon' : null;
-    if (key) {
-        const asset = getAsset(key);
-        if (asset) return asset;
-    }
+function getItemSprite() {
     return null;
 }

@@ -32,6 +32,7 @@ const GameEngine = {
         ItemSystem.init();
         EffectSystem.init();
         ScoreSystem.init();
+        LeaderboardSystem.init();
     },
 
     start() {
@@ -244,6 +245,11 @@ const GameEngine = {
         const finalScore = ScoreSystem.saveHighScore();
         ScoreSystem.checkUnlocks(ScoreSystem.getTotalScore());
         ScoreSystem.checkAchievements(this.currentDifficulty, this.bossNoDamage);
+
+        const playerId = LeaderboardSystem.getPlayerId();
+        if (playerId) {
+            LeaderboardSystem.addRecord(playerId, ScoreSystem.getScore(), this.currentDifficulty, this.waveNumber);
+        }
     },
 
     selectSkin(skinId) {
